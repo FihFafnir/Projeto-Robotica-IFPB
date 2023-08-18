@@ -1,0 +1,32 @@
+#include "Vehicle.h"
+#define MAX_SPEED 255
+#define CURRENT_SPEED 80
+#define LEFT_SENSOR_PIN 12
+#define RIGHT_SENSOR_PIN 7
+#define LEFT_MOTOR_PIN_1 11
+#define LEFT_MOTOR_PIN_2 10
+#define RIGHT_MOTOR_PIN_1 9
+#define RIGHT_MOTOR_PIN_2 8
+
+typedef unsigned short ushort;
+
+Vehicle *myV = new Vehicle(CURRENT_SPEED, MAX_SPEED);
+
+void setup() {
+    ushort pins[] = {RIGHT_MOTOR_PIN_2, RIGHT_MOTOR_PIN_1, LEFT_MOTOR_PIN_2, LEFT_MOTOR_PIN_1};
+    myV->setPins(pins);
+    pinMode(LEFT_SENSOR_PIN, INPUT);
+    pinMode(RIGHT_SENSOR_PIN, INPUT);
+    pinMode(LED_BUILTIN, OUTPUT);
+}
+
+void loop() {
+    if (digitalRead(LEFT_SENSOR_PIN) || digitalRead(RIGHT_SENSOR_PIN))
+        myV->stop();
+    else
+        myV->forward();
+    // digitalWrite(LED_BUILTIN, HIGH);
+    // delay(1000);
+    // digitalWrite(LED_BUILTIN, LOW);
+    // delay(1000);
+}
