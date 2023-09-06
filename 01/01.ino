@@ -21,12 +21,11 @@ void setup() {
 }
 
 void loop() {
-    if (digitalRead(LEFT_SENSOR_PIN) || digitalRead(RIGHT_SENSOR_PIN))
+    if (digitalRead(LEFT_SENSOR_PIN) && digitalRead(RIGHT_SENSOR_PIN)) 
         myV->stop();
-    else
-        myV->forward();
-    // digitalWrite(LED_BUILTIN, HIGH);
-    // delay(1000);
-    // digitalWrite(LED_BUILTIN, LOW);
-    // delay(1000);
+    else if (digitalRead(LEFT_SENSOR_PIN))
+        myV->rotateLeft();
+    else if (digitalRead(RIGHT_SENSOR_PIN))
+        myV->rotateRight();
+    else myV-forward();
 }
