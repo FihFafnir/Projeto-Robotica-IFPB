@@ -1,12 +1,19 @@
 #include "Vehicle.h"
+
+// Speed Configuration
 #define MAX_SPEED 255
 #define CURRENT_SPEED 80
+
+// Sensor Configuration
 #define LEFT_SENSOR_PIN 12
 #define RIGHT_SENSOR_PIN 7
+
+// Motors Configuration
+// Use PWM Pins (Arduino Uno = 3, 5, 6, 10, 11)
 #define LEFT_MOTOR_PIN_1 11
 #define LEFT_MOTOR_PIN_2 10
-#define RIGHT_MOTOR_PIN_1 9
-#define RIGHT_MOTOR_PIN_2 8
+#define RIGHT_MOTOR_PIN_1 6
+#define RIGHT_MOTOR_PIN_2 5
 
 typedef unsigned short ushort;
 
@@ -21,11 +28,12 @@ void setup() {
 }
 
 void loop() {
-    if (digitalRead(LEFT_SENSOR_PIN) && digitalRead(RIGHT_SENSOR_PIN)) 
+    if (digitalRead(LEFT_SENSOR_PIN) && digitalRead(RIGHT_SENSOR_PIN))
         myV->stop();
     else if (digitalRead(LEFT_SENSOR_PIN))
         myV->rotateLeft();
     else if (digitalRead(RIGHT_SENSOR_PIN))
         myV->rotateRight();
-    else myV->forward();
+    else
+        myV->forward();
 }
