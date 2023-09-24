@@ -34,6 +34,5 @@ void loop() {
         myV->rotateLeft();
     else if (digitalRead(RIGHT_SENSOR_PIN))
         myV->rotateRight();
-    else
-        myV->forward();
+    else myV->forward();
 }
