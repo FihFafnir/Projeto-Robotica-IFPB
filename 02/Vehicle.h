@@ -1,16 +1,18 @@
 #ifndef VEHICLE_H_INCLUDED
 #define VEHICLE_H_INCLUDED
 #include "Motor.h"
-typedef unsigned short ushort;
+typedef unsigned char byte;
 
 class Vehicle {
     Motor *leftMotor, *rightMotor;
-    ushort speed, maxSpeed;
+    byte speed, maxSpeed;
     public:
-        Vehicle(ushort spd, ushort maxSpd);
-        void setPins(ushort pins[]);
-        void setSpeed(ushort value);
-        ushort getSpeed();
+        Vehicle(byte spd, byte maxSpd);
+        void setPins(byte pins[]);
+        void setSpeed(byte value);
+        void setSpeed(byte leftMotorValue, byte rightMotorSpeed);
+        byte getLeftMotorSpeed();
+        byte getRightMotorSpeed();
         void forward();
         void backward();
         void rotateLeft();
@@ -18,12 +20,12 @@ class Vehicle {
         void stop();
 };
 
-Vehicle::Vehicle(ushort spd, ushort maxSpd) {
+Vehicle::Vehicle(byte spd, byte maxSpd) {
     speed = spd;
     maxSpeed = maxSpd;
 }
 
-void Vehicle::setPins(ushort pins[]) {
+void Vehicle::setPins(byte pins[]) {
     leftMotor = new Motor(pins[0], pins[1], speed, maxSpeed);
     rightMotor = new Motor(pins[2], pins[3], speed, maxSpeed);
     pinMode(pins[0], OUTPUT);
@@ -32,14 +34,22 @@ void Vehicle::setPins(ushort pins[]) {
     pinMode(pins[3], OUTPUT);
 }
 
-void Vehicle::setSpeed(ushort value) {
-    speed = min(value, maxSpeed);
-    leftMotor->setSpeed(speed);
-    rightMotor->setSpeed(speed);
+void Vehicle::setSpeed(byte value) {
+    leftMotor->setSpeed(value);
+    rightMotor->setSpeed(value);
 }
 
-ushort Vehicle::getSpeed() {
-    return speed;
+void Vehicle::setSpeed(byte leftMotorValue, byte rightMotorValue) {
+    leftMotor->setSpeed(leftMotorValue);
+    rightMotor->setSpeed(rightMotorValue);
+}
+
+byte Vehicle::getLeftMotorSpeed() {
+    return leftMotor->getSpeed();
+}
+
+byte Vehicle::getRightMotorSpeed() {
+    return rightMotor->getSpeed();
 }
 
 void Vehicle::forward() {

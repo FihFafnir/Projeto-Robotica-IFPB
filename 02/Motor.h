@@ -1,32 +1,37 @@
 #ifndef MOTOR_H_INCLUDED
 #define MOTOR_H_INCLUDED
-typedef unsigned short ushort;
+typedef unsigned char byte;
 
 class Motor {
-    ushort speed, maxSpeed;
-    ushort pins[2];
+    byte speed, maxSpeed;
+    byte pins[2];
     public:
-        Motor(ushort firstPin, ushort secondPin, ushort speed, ushort maxSpeed);
-        void setSpeed(ushort value);
+        Motor(byte firstPin, byte secondPin, byte speed, byte maxSpeed);
+        byte getSpeed();
+        void setSpeed(byte value);
         void rotateClockwise();
         void rotateCounterclockwise();
         void stop();
     private:
-        void rotate(ushort firstPin, ushort secondPin);
+        void rotate(byte firstPin, byte secondPin);
 };
 
-Motor::Motor(ushort firstPin, ushort secondPin, ushort spd, ushort maxSpd) {
+Motor::Motor(byte firstPin, byte secondPin, byte spd, byte maxSpd) {
     pins[0] = firstPin;
     pins[1] = secondPin;
     speed = spd;
     maxSpeed = maxSpd;
 }
 
-void Motor::setSpeed(ushort value) {
-    speed = min(value, maxSpeed);
+byte Motor::getSpeed() {
+    return speed;
 }
 
-void Motor::rotate(ushort firstPin, ushort secondPin) {
+void Motor::setSpeed(byte value) {
+    speed = max(min(value, maxSpeed), 0);
+}
+
+void Motor::rotate(byte firstPin, byte secondPin) {
     analogWrite(firstPin, speed);
     digitalWrite(secondPin, LOW);
 }

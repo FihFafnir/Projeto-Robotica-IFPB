@@ -17,9 +17,22 @@
 #define RIGHT_MOTOR_PIN_1 6
 #define RIGHT_MOTOR_PIN_2 5
 
-typedef unsigned short ushort;
+// Constants Configuration
+// PID
+#define KP 0
+#define KI 35
+#define KD 35
+
+// Error Weights Configuration
+#define LEFT_MOST_SENSOR_ERROR -1.5
+#define LEFT_SENSOR_ERROR -1
+#define RIGHT_SENSOR_ERROR 1
+#define RIGHT_MOST_SENSOR_ERROR 1.5
+
+typedef unsigned char byte;
 
 Vehicle *myV = new Vehicle(CURRENT_SPEED, MAX_SPEED);
+int p = 0, i = 0, d = 0, pid = 0, currentError = 0, previousError = 0;
 
 int readSensors(int leftMostSensorPin, int leftSensorPin, int rightSensorPin, int rightMostSensorPin) {
     bool 
@@ -28,11 +41,24 @@ int readSensors(int leftMostSensorPin, int leftSensorPin, int rightSensorPin, in
         rightSensorValue = digitalRead(rightSensorPin) != HIGH,
         rightMostSensorValue = digitalRead(rightMostSensorPin) != HIGH;
 
-    return leftMostSensorValue << 3 | leftSensorValue << 2 | rightSensorValue << 1 | rightMostSensorValue;
+    return leftMostSensorValue*LEFT_MOST_SENSOR_ERROR + leftSensorValue*LEFT_SENSOR_ERROR + rightSensorValue*RIGHT_SENSOR_ERROR + rightMostSensorValue*RIGHT_MOST_SENSOR_ERROR;
+}
+
+int calculatePID() {
+    currentError = readSensors(LEFT_MOST_SENSOR_PIN, LEFT_SENSOR_PIN, RIGHT_SENSOR_PIN, RIGHT_MOST_SENSOR_PIN);
+    p = currentError, 
+    d = currentError - previousError;
+    i = currentError ? i + currentError : 0;
+    if (i > 255)
+        i = 255;
+    else if(i < -255)
+        i = -255;
+    previousError = currentError;
+    return KP*p + KI*i + KD*d;
 }
 
 void setup() {
-    ushort pins[] = {RIGHT_MOTOR_PIN_2, RIGHT_MOTOR_PIN_1, LEFT_MOTOR_PIN_2, LEFT_MOTOR_PIN_1};
+    byte pins[] = {RIGHT_MOTOR_PIN_2, RIGHT_MOTOR_PIN_1, LEFT_MOTOR_PIN_2, LEFT_MOTOR_PIN_1};
     myV->setPins(pins);
     pinMode(LEFTMOST_SENSOR_PIN, INPUT);
     pinMode(LEFT_SENSOR_PIN, INPUT);
@@ -41,30 +67,9 @@ void setup() {
 }
 
 void loop() {
-    switch (readSensors(LEFTMOST_SENSOR_PIN, LEFT_SENSOR_PIN, RIGHT_SENSOR_PIN, RIGHTMOST_SENSOR_PIN)) {
-        case 0: // 0000
-            // 180°
-            myV->rotateRight();
-            delay(600);
-            break;
-        case 2: // 0010
-            myV->rotateRight();
-            break;
-        case 4: // 0100
-            myV->rotateLeft();
-            break;
-        case 6: // 0110
-            myV->forward();
-            break;
-        case 7: // 0111
-            // 90° Right
-            myV->rotateRight();
-            delay(300);
-        case 14: // 1110
-            // 90° Left
-            myV->rotateLeft();
-            delay(300);
-        default:
-            myV->stop();
-    }
+    pid = calculatePID();
+    if (pid >= 0) 
+        myV->setSpeed(myV->getLeftMotorSpeed(), myV->getRightMotorSpeed() - pid);
+    else 
+        myV->setSpeed(myV->getLeftMotorSpeed() + pid, myV->getRightMotorSpeed());
 }
