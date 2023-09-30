@@ -2,7 +2,7 @@
 
 // Speed Configuration
 #define MAX_SPEED 255
-#define INITIAL_SPEED 120
+#define INITIAL_SPEED 150
 
 // Sensor Configuration
 #define LEFTMOST_SENSOR_PIN 13
@@ -19,9 +19,9 @@
 
 // Constants Configuration
 // PID
-#define KP 25
+#define KP 15
 #define KI 0
-#define KD 15
+#define KD 25
 
 // Error Weights Configuration
 #define LEFTMOST_SENSOR_ERROR 3
@@ -73,11 +73,29 @@ void setup() {
 
 void loop() {
     currentError = calculateError(LEFTMOST_SENSOR_PIN, LEFT_SENSOR_PIN, RIGHT_SENSOR_PIN, RIGHTMOST_SENSOR_PIN);
-    if (currentError >= 100) {
+    switch (currentError) {
+    case 100: // Make U
+        myV->setSpeed(150);
+        myV->rotateLeft();
+        delay(200);
         myV->stop();
-        myV->setSpeed(INITIAL_SPEED);
-        currentError = previousError = pid = 0;
-    } else {
+        delay(1000);
+        break;
+    case 101: // Turn to right
+        myV->setSpeed(150);
+        myV->rotateRight();
+        delay(200);
+        myV->stop();
+        delay(1000);
+        break;
+    case 102: // Turn to right
+        myV->setSpeed(150);
+        myV->rotateRight();
+        delay(400);
+        myV->stop();
+        delay(1000);
+        break;
+    default:
         pid = calculatePID();
         previousError = currentError;
         myV->setSpeed(INITIAL_SPEED + pid, INITIAL_SPEED - pid);
@@ -86,6 +104,5 @@ void loop() {
             myV->setSpeed(INITIAL_SPEED);
             currentError = previousError = pid = 0;
         } else myV->forward();
-    }   
-
+    }
 }
