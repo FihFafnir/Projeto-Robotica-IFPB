@@ -75,25 +75,25 @@ void loop() {
     currentError = calculateError(LEFTMOST_SENSOR_PIN, LEFT_SENSOR_PIN, RIGHT_SENSOR_PIN, RIGHTMOST_SENSOR_PIN);
     switch (currentError) {
     case 100: // Turn to left (90°)
-        myV->setSpeed(150);
-        myV->rotateLeft();
-        delay(200);
-        myV->stop();
-        delay(1000);
+        myV->setSpeed(50);
+        do {
+            myV->rotateLeft();
+            currentError = calculateError(LEFTMOST_SENSOR_PIN, LEFT_SENSOR_PIN, RIGHT_SENSOR_PIN, RIGHTMOST_SENSOR_PIN);
+        } while(!currentError);;
         break;
     case 101: // Turn to right (90°)
-        myV->setSpeed(150);
-        myV->rotateRight();
-        delay(200);
-        myV->stop();
-        delay(1000);
+        myV->setSpeed(50);
+        do {
+            myV->rotateRight();
+            currentError = calculateError(LEFTMOST_SENSOR_PIN, LEFT_SENSOR_PIN, RIGHT_SENSOR_PIN, RIGHTMOST_SENSOR_PIN);
+        } while(!currentError);
         break;
     case 102: // Make U (180°)
-        myV->setSpeed(150);
-        myV->rotateRight();
-        delay(400);
-        myV->stop();
-        delay(1000);
+        myV->setSpeed(50);
+        do {
+            myV->rotateRight();
+            currentError = calculateError(LEFTMOST_SENSOR_PIN, LEFT_SENSOR_PIN, RIGHT_SENSOR_PIN, RIGHTMOST_SENSOR_PIN);
+        } while(!currentError);
         break;
     default:
         pid = calculatePID();
