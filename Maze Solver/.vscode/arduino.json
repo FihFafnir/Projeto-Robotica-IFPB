@@ -1,0 +1,6 @@
+{
+    "board": "arduino:avr:uno",
+    "programmer": "arduinoasisp",
+    "port": "/dev/ttyUSB0",
+    "sketch": "Maze Solver.ino"
+}

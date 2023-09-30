@@ -11,6 +11,9 @@ class Vehicle {
         void setPins(byte pins[]);
         void setSpeed(byte value);
         void setSpeed(byte leftMotorValue, byte rightMotorSpeed);
+        void updateSpeed(byte value);
+        void updateSpeed(byte leftMotorValue, byte rightMotorSpeed);
+        byte getSpeed();
         byte getLeftMotorSpeed();
         byte getRightMotorSpeed();
         void forward();
@@ -35,13 +38,25 @@ void Vehicle::setPins(byte pins[]) {
 }
 
 void Vehicle::setSpeed(byte value) {
-    leftMotor->setSpeed(value);
-    rightMotor->setSpeed(value);
+    speed = value;
+    setSpeed(value, value);
 }
 
 void Vehicle::setSpeed(byte leftMotorValue, byte rightMotorValue) {
     leftMotor->setSpeed(leftMotorValue);
     rightMotor->setSpeed(rightMotorValue);
+}
+
+void Vehicle::updateSpeed(byte value) {
+    updateSpeed(value, value);
+}
+
+void Vehicle::updateSpeed(byte leftMotorValue, byte rightMotorValue) {
+    setSpeed(getLeftMotorSpeed() + leftMotorValue, getRightMotorSpeed() + rightMotorValue);
+}
+
+byte Vehicle::getSpeed() {
+    return (getLeftMotorSpeed() + getRightMotorSpeed())/2;
 }
 
 byte Vehicle::getLeftMotorSpeed() {
