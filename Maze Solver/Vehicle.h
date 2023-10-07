@@ -13,14 +13,14 @@ class Vehicle {
         void setSpeed(byte leftMotorValue, byte rightMotorSpeed);
         void updateSpeed(byte value);
         void updateSpeed(byte leftMotorValue, byte rightMotorSpeed);
-        byte getSpeed();
-        byte getLeftMotorSpeed();
-        byte getRightMotorSpeed();
         void forward();
         void backward();
         void rotateLeft();
         void rotateRight();
         void stop();
+        byte getSpeed();
+        byte getLeftMotorSpeed();
+        byte getRightMotorSpeed();
 };
 
 Vehicle::Vehicle(byte spd, byte maxSpd) {
@@ -78,13 +78,13 @@ void Vehicle::backward() {
 }
 
 void Vehicle::rotateLeft() {
-    leftMotor->rotateClockwise();
-    rightMotor->rotateClockwise();
+    leftMotor->rotateCounterclockwise();
+    rightMotor->rotateCounterclockwise();
 }
 
 void Vehicle::rotateRight() {
-    leftMotor->rotateCounterclockwise();
-    rightMotor->rotateCounterclockwise();
+    leftMotor->rotateClockwise();
+    rightMotor->rotateClockwise();
 }
 
 void Vehicle::stop() {
