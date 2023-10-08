@@ -111,11 +111,10 @@ void loop() {
 
             if (!(pathLength >= 2 && path[pathLength-1] == 'B'&& path[pathLength-2] == 'R')) {
                 if (currentError == 102 || (path[pathLength-1] == 'B' && path[pathLength-2] == 'S')) {
-                    if (path[pathLength-1] == 'B' && path[pathLength-2] == 'S') 
-                        do {
-                            myV->rotateLeft();
-                            currentError = calculateError();
-                        } while (currentError < 100);
+                    do {
+                        myV->rotateLeft();
+                        currentError = calculateError();
+                    } while (currentError < 100);
                     do {
                         myV->rotateLeft();
                         currentError = calculateError();
@@ -137,11 +136,10 @@ void loop() {
 
             if (!(pathLength >= 2 && path[pathLength-1] == 'B' && path[pathLength-2] == 'L')) {
                 if (currentError == 102 || (path[pathLength-1] == 'B' && path[pathLength-2] == 'S')) {
-                    if (path[pathLength-1] == 'B' && path[pathLength-2] == 'S')
-                        do {
-                            myV->rotateRight();
-                            currentError = calculateError();
-                        } while (currentError < 100);
+                    do {
+                        myV->rotateRight();
+                        currentError = calculateError();
+                    } while (currentError < 100);
                     do {
                         myV->rotateRight();
                         currentError = calculateError();
