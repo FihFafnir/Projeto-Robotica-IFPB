@@ -8,7 +8,7 @@ class Vehicle {
     byte speed, maxSpeed;
     public:
         Vehicle(byte spd, byte maxSpd);
-        void setPins(byte pins[]);
+        void setMotorsPins(byte firstLeftSensorPin, byte secondLeftSensorPin, byte firstRightSensorPin, byte secondRightSensorPin);
         void setSpeed(byte value);
         void setSpeed(byte leftMotorValue, byte rightMotorSpeed);
         void updateSpeed(byte value);
@@ -28,13 +28,13 @@ Vehicle::Vehicle(byte spd, byte maxSpd) {
     maxSpeed = maxSpd;
 }
 
-void Vehicle::setPins(byte pins[]) {
-    leftMotor = new Motor(pins[0], pins[1], speed, maxSpeed);
-    rightMotor = new Motor(pins[2], pins[3], speed, maxSpeed);
-    pinMode(pins[0], OUTPUT);
-    pinMode(pins[1], OUTPUT);
-    pinMode(pins[2], OUTPUT);
-    pinMode(pins[3], OUTPUT);
+void Vehicle::setMotorsPins(byte firstLeftSensorPin, byte secondLeftSensorPin, byte firstRightSensorPin, byte secondRightSensorPin) {
+    leftMotor = new Motor(firstLeftSensorPin, secondLeftSensorPin, speed, maxSpeed);
+    rightMotor = new Motor(firstRightSensorPin, secondRightSensorPin, speed, maxSpeed);
+    pinMode(firstLeftSensorPin, OUTPUT);
+    pinMode(secondLeftSensorPin, OUTPUT);
+    pinMode(firstRightSensorPin, OUTPUT);
+    pinMode(secondRightSensorPin, OUTPUT);
 }
 
 void Vehicle::setSpeed(byte value) {
