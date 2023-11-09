@@ -39,12 +39,12 @@ void setup() {
 
 void loop() {
     if (
-        digitalRead(LEFT_OUTER_SENSOR_PIN) && 
-        digitalRead(LEFT_INNER_SENSOR_PIN) && 
-        digitalRead(MIDDLE_SENSOR_PIN) && 
-        digitalRead(RIGHT_INNER_SENSOR_PIN) && 
-        digitalRead(RIGHT_OUTER_SENSOR_PIN)
+        !digitalRead(LEFT_OUTER_SENSOR_PIN) && 
+        !digitalRead(LEFT_INNER_SENSOR_PIN) && 
+        !digitalRead(MIDDLE_SENSOR_PIN) && 
+        !digitalRead(RIGHT_INNER_SENSOR_PIN) && 
+        !digitalRead(RIGHT_OUTER_SENSOR_PIN)
     )
-        ms->followLine();   
-    else ms->stop();
+        ms->stop();   
+    else ms->followLine();
 }
