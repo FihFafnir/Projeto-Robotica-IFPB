@@ -20,7 +20,7 @@
 
 // Constants Configuration
 // PID
-#define KP 10
+#define KP 1
 #define KI 0
 #define KD 0
 // Error Weights
@@ -38,7 +38,7 @@ void setup() {
 }
 
 void loop() {
-    if (digitalRead(RIGHT_OUTER_SENSOR_PIN))
+    if (!digitalRead(MIDDLE_SENSOR_PIN))
         ms->followLine();   
     else ms->stop();
 }
