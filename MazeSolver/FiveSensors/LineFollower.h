@@ -38,19 +38,19 @@ float LineFollower::calculateError() {
         rightInnerSensorValue = !digitalRead(rightInnerSensorPin),
         rightOuterSensorValue = !digitalRead(rightOuterSensorPin);
 
-    if (!leftOuterSensorValue && !leftInnerSensorValue && !middleSensorValue && !rightInnerSensorValue && rightOuterSensorPin)
+    if (!leftOuterSensorValue && !leftInnerSensorValue && !middleSensorValue && !rightInnerSensorValue && rightInnerSensorValue)
         return outerSensorsError;
-    if (!leftOuterSensorValue && !leftInnerSensorValue && !middleSensorValue && rightInnerSensorValue && rightOuterSensorPin)
+    if (!leftOuterSensorValue && !leftInnerSensorValue && !middleSensorValue && rightInnerSensorValue && rightInnerSensorValue)
         return (outerSensorsError + middleSensorsError)/2;
-    if (!leftOuterSensorValue && !leftInnerSensorValue && !middleSensorValue && rightInnerSensorValue && !rightOuterSensorPin)
+    if (!leftOuterSensorValue && !leftInnerSensorValue && !middleSensorValue && rightInnerSensorValue && !rightInnerSensorValue)
         return middleSensorsError;
-    if (!leftOuterSensorValue && !leftInnerSensorValue && middleSensorValue && !rightInnerSensorValue && !rightOuterSensorPin)
+    if (!leftOuterSensorValue && !leftInnerSensorValue && middleSensorValue && !rightInnerSensorValue && !rightInnerSensorValue)
         return 0;
-    if (!leftOuterSensorValue && leftInnerSensorValue && !middleSensorValue && !rightInnerSensorValue && !rightOuterSensorPin)
+    if (!leftOuterSensorValue && leftInnerSensorValue && !middleSensorValue && !rightInnerSensorValue && !rightInnerSensorValue)
         return -middleSensorsError;
-    if (leftOuterSensorValue && leftInnerSensorValue && !middleSensorValue && !rightInnerSensorValue && !rightOuterSensorPin)
+    if (leftOuterSensorValue && leftInnerSensorValue && !middleSensorValue && !rightInnerSensorValue && !rightInnerSensorValue)
         return -(outerSensorsError + middleSensorsError)/2;
-    if (leftOuterSensorValue && !leftInnerSensorValue && !middleSensorValue && !rightInnerSensorValue && !rightOuterSensorPin)
+    if (leftOuterSensorValue && !leftInnerSensorValue && !middleSensorValue && !rightInnerSensorValue && !rightInnerSensorValue)
         return -outerSensorsError;
 
 }
