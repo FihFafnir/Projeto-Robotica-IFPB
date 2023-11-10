@@ -6,22 +6,24 @@ typedef unsigned char byte;
 
 class Vehicle {
     Motor *leftMotor, *rightMotor;
-    byte speed, maxSpeed;
+    byte maxSpeed;
+    float speed;
     public:
         Vehicle(byte initialSpeed, byte maxSpeed);
         void setMotorsPins(byte firstLeftMotorPin, byte secondLeftMotorPin, byte firstRightMotorPin, byte secondRightMotorPin);
-        void setSpeed(byte newSpeed);
-        void setSpeed(byte leftMotorNewSpeed, byte rightMotorNewSpeed);
-        void updateSpeed(byte deltaSpeed);
-        void updateSpeed(byte leftMotorDeltaSpeed, byte rightMotorDeltaSpeed);
+        void setSpeed(float newSpeed);
+        void setSpeed(float leftMotorNewSpeed, float rightMotorNewSpeed);
+        void updateSpeed(float deltaSpeed);
+        void updateSpeed(float leftMotorDeltaSpeed, float rightMotorDeltaSpeed);
+        void run();
         void forward();
         void backward();
         void rotateLeft();
         void rotateRight();
         void stop();
-        byte getSpeed();
-        byte getLeftMotorSpeed();
-        byte getRightMotorSpeed();
+        float getSpeed();
+        float getLeftMotorSpeed();
+        float getRightMotorSpeed();
 };
 
 Vehicle::Vehicle(byte initialSpeed, byte maxSpeed) {
@@ -34,34 +36,47 @@ void Vehicle::setMotorsPins(byte firstLeftMotorPin, byte secondLeftMotorPin, byt
     rightMotor = new Motor(firstRightMotorPin, secondRightMotorPin, maxSpeed);
 }
 
-void Vehicle::setSpeed(byte newValue) {
-    leftMotor->setSpeed(newValue);
-    rightMotor->setSpeed(newValue);
+void Vehicle::setSpeed(float newSpeed) {
+    leftMotor->setSpeed(newSpeed);
+    rightMotor->setSpeed(newSpeed);
 }
 
-void Vehicle::setSpeed(byte leftMotorValue, byte rightMotorValue) {
-    leftMotor->setSpeed(leftMotorValue);
-    rightMotor->setSpeed(rightMotorValue);
+void Vehicle::setSpeed(float newLeftMotorSpeed, float newRightMotorSpeed) {
+    leftMotor->setSpeed(newLeftMotorSpeed);
+    rightMotor->setSpeed(newRightMotorSpeed);
 }
 
-void Vehicle::updateSpeed(byte value) {
-    updateSpeed(value, value);
+void Vehicle::updateSpeed(float deltaSpeed) {
+    setSpeed(getSpeed() + deltaSpeed);
 }
 
-void Vehicle::updateSpeed(byte leftMotorValue, byte rightMotorValue) {
-    setSpeed(getLeftMotorSpeed() + leftMotorValue, getRightMotorSpeed() + rightMotorValue);
+void Vehicle::updateSpeed(float leftMotorDeltaSpeed, float rightMotorDeltaSpeed) {
+    setSpeed(getLeftMotorSpeed() + leftMotorDeltaSpeed, getRightMotorSpeed() + rightMotorDeltaSpeed);
 }
 
-byte Vehicle::getSpeed() {
+float Vehicle::getSpeed() {
     return (getLeftMotorSpeed() + getRightMotorSpeed())/2;
 }
 
-byte Vehicle::getLeftMotorSpeed() {
+float Vehicle::getLeftMotorSpeed() {
     return leftMotor->getSpeed();
 }
 
-byte Vehicle::getRightMotorSpeed() {
+float Vehicle::getRightMotorSpeed() {
     return rightMotor->getSpeed();
+}
+
+void Vehicle::run()
+{
+    if (getLeftMotorSpeed() > 0 && getRightMotorSpeed() > 0)
+        forward();
+    else if (getLeftMotorSpeed() < 0 && getRightMotorSpeed() < 0)
+        backward();
+    else if (getLeftMotorSpeed() > 0 && getRightMotorSpeed() < 0)
+        rotateRight();
+    else if (getLeftMotorSpeed() < 0 && getRightMotorSpeed() > 0)
+        rotateLeft();
+    else stop();
 }
 
 void Vehicle::forward() {

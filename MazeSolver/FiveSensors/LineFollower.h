@@ -8,18 +8,18 @@ class LineFollower : public Vehicle {
     float 
         kp, ki, kd, 
         p, i, d, 
-        pid, currentError, previousError,
-        middleSensorsError, outerSensorsError;
-    byte initialSpeed, leftOuterSensorPin, leftInnerSensorPin, middleSensorPin, rightInnerSensorPin, rightOuterSensorPin;
+        pid, previousError;
 
     public:
+        float currentError, middleSensorsError, outerSensorsError, centralSensorError;
+        byte initialSpeed, leftOuterSensorPin, leftInnerSensorPin, middleSensorPin, rightInnerSensorPin, rightOuterSensorPin;
         LineFollower(byte initialSpeed, byte maxSpeed);
         float calculateError();
         float calculatePID();
         float getCurrentError();
         void followLine();
         void stop();
-        void setErrorWeights(float newMiddleSensorsError, float newOuterSensorsError);
+        void setErrorWeights(float newMiddleSensorsError, float newOuterSensorsError, float centralSensorError);
         void setConstants(float kp, float ki, float kd);
         void setSensorsPins(byte newLeftOuterSensorPin, byte newLeftInnerSensorPin, byte newMiddleSensorPin, byte newRightInnerSensorPin, byte newRightOuterSensorPin);
 
@@ -38,21 +38,26 @@ float LineFollower::calculateError() {
         rightInnerSensorValue = !digitalRead(rightInnerSensorPin),
         rightOuterSensorValue = !digitalRead(rightOuterSensorPin);
 
-    if (!leftOuterSensorValue && !leftInnerSensorValue && !middleSensorValue && !rightInnerSensorValue && rightInnerSensorValue)
-        return outerSensorsError;
-    if (!leftOuterSensorValue && !leftInnerSensorValue && !middleSensorValue && rightInnerSensorValue && rightInnerSensorValue)
-        return (outerSensorsError + middleSensorsError)/2;
-    if (!leftOuterSensorValue && !leftInnerSensorValue && !middleSensorValue && rightInnerSensorValue && !rightInnerSensorValue)
-        return middleSensorsError;
-    if (!leftOuterSensorValue && !leftInnerSensorValue && middleSensorValue && !rightInnerSensorValue && !rightInnerSensorValue)
-        return 0;
-    if (!leftOuterSensorValue && leftInnerSensorValue && !middleSensorValue && !rightInnerSensorValue && !rightInnerSensorValue)
-        return -middleSensorsError;
-    if (leftOuterSensorValue && leftInnerSensorValue && !middleSensorValue && !rightInnerSensorValue && !rightInnerSensorValue)
-        return -(outerSensorsError + middleSensorsError)/2;
-    if (leftOuterSensorValue && !leftInnerSensorValue && !middleSensorValue && !rightInnerSensorValue && !rightInnerSensorValue)
-        return -outerSensorsError;
-
+    switch (leftOuterSensorValue << 4 | leftInnerSensorValue << 3 | middleSensorValue << 2 | rightInnerSensorValue << 1 | rightOuterSensorValue) {
+        case 0b000001:
+            return outerSensorsError;
+        case 0b00011:
+            return (outerSensorsError + middleSensorsError)/2;
+        case 0b00010:
+            return middleSensorsError;
+        case 0b00110:
+            return (middleSensorsError + centralSensorError)/2;
+        case 0b00100:
+            return centralSensorError;
+        case 0b01100:
+            return -(middleSensorsError + centralSensorError)/2;
+        case 0b01000:
+            return -middleSensorsError;
+        case 0b11000:
+            return -(outerSensorsError + middleSensorsError)/2;
+        case 0b10000:
+            return -outerSensorsError;
+    }
 }
 
 float LineFollower::calculatePID() {
@@ -71,8 +76,8 @@ float LineFollower::getCurrentError() {
 
 void LineFollower::followLine() {
     pid = calculatePID();
-    setSpeed(initialSpeed - pid, initialSpeed + pid);
-    forward();
+    setSpeed(initialSpeed + pid, initialSpeed - pid);
+    run();
 }
 
 void LineFollower::stop() {
@@ -82,9 +87,10 @@ void LineFollower::stop() {
 }
 
 
-void LineFollower::setErrorWeights(float newMiddleSensorsError, float newOuterSensorsError) {
+void LineFollower::setErrorWeights(float newMiddleSensorsError, float newOuterSensorsError, float newCentralSensorError) {
     middleSensorsError = newMiddleSensorsError;
     outerSensorsError = newOuterSensorsError;
+    centralSensorError = newCentralSensorError;
 }
 
 void LineFollower::setConstants(float newKp, float newKi, float newKd) {

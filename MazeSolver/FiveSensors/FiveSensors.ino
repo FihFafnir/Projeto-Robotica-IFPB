@@ -1,8 +1,8 @@
-#include "LineFollower.h"
+#include "MazeSolver.h"
 
 // Speed Configuration
 #define MAX_SPEED 255
-#define INITIAL_SPEED 90
+#define INITIAL_SPEED 60
 
 // Sensor Configuration
 #define LEFT_OUTER_SENSOR_PIN 12
@@ -20,31 +20,38 @@
 
 // Constants Configuration
 // PID
-#define KP 1
+#define KP 100
 #define KI 0
-#define KD 0
-// Error Weights
-#define MIDDLE_SENSORS_ERROR 1
-#define OUTER_SENSORS_ERROR 2.2
+#define KD 20
 
-LineFollower *ms = new LineFollower(INITIAL_SPEED, MAX_SPEED);
+// Error Weights
+#define CENTRAL_SENSOR_ERROR 0
+#define MIDDLE_SENSORS_ERROR 2
+#define OUTER_SENSORS_ERROR 4
+
+#define MAX_PATH_LENGTH 100
+
+MazeSolver *ms = new MazeSolver(INITIAL_SPEED, MAX_SPEED, MAX_PATH_LENGTH);
 
 void setup() {
     ms->setConstants(KP, KI, KD);
-    ms->setErrorWeights(MIDDLE_SENSORS_ERROR, OUTER_SENSORS_ERROR);
+    ms->setErrorWeights(MIDDLE_SENSORS_ERROR, OUTER_SENSORS_ERROR, CENTRAL_SENSOR_ERROR);
     ms->setSensorsPins(LEFT_OUTER_SENSOR_PIN, LEFT_INNER_SENSOR_PIN, MIDDLE_SENSOR_PIN, RIGHT_INNER_SENSOR_PIN, RIGHT_OUTER_SENSOR_PIN);
     ms->setMotorsPins(LEFT_MOTOR_PIN_1, LEFT_MOTOR_PIN_2, RIGHT_MOTOR_PIN_1, RIGHT_MOTOR_PIN_2);
     ms->setSpeed(INITIAL_SPEED);
 }
 
 void loop() {
-    if (
-        !digitalRead(LEFT_OUTER_SENSOR_PIN) && 
-        !digitalRead(LEFT_INNER_SENSOR_PIN) && 
-        !digitalRead(MIDDLE_SENSOR_PIN) && 
-        !digitalRead(RIGHT_INNER_SENSOR_PIN) && 
-        !digitalRead(RIGHT_OUTER_SENSOR_PIN)
-    )
-        ms->stop();   
-    else ms->followLine();
+    if (ms->isOn)
+        ms->solver();
+    else {
+        ms->stop();
+        if (
+            digitalRead(LEFT_OUTER_SENSOR_PIN) && 
+            digitalRead(LEFT_INNER_SENSOR_PIN) && 
+            !digitalRead(MIDDLE_SENSOR_PIN) && 
+            digitalRead(RIGHT_INNER_SENSOR_PIN) && 
+            digitalRead(RIGHT_OUTER_SENSOR_PIN)
+        ) ms->on();
+    }
 }

@@ -3,12 +3,13 @@
 typedef unsigned char byte;
 
 class Motor {
-    byte speed, maxSpeed;
+    float speed;
+    byte maxSpeed;
     byte pins[2];
     public:
         Motor(byte firstPin, byte secondPin, byte maxSpeed);
-        byte getSpeed();
-        void setSpeed(byte value);
+        float getSpeed();
+        void setSpeed(float value);
         void rotateClockwise();
         void rotateCounterclockwise();
         void stop();
@@ -24,16 +25,16 @@ Motor::Motor(byte firstPin, byte secondPin, byte maxSpeed) {
     pinMode(secondPin, OUTPUT);
 }
 
-byte Motor::getSpeed() {
+float Motor::getSpeed() {
     return speed;
 }
 
-void Motor::setSpeed(byte value) {
-    speed = max(min(value, maxSpeed), 0);
+void Motor::setSpeed(float value) {
+    speed = max(min(value, maxSpeed), -maxSpeed);
 }
 
 void Motor::rotate(byte firstPin, byte secondPin) {
-    analogWrite(firstPin, speed);
+    analogWrite(firstPin, abs(speed));
     digitalWrite(secondPin, LOW);
 }
 
