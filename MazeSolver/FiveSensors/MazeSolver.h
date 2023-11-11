@@ -14,7 +14,7 @@ class MazeSolver : public LineFollower {
     Stack* path;
     public:
         bool isOn;
-        MazeSolver(byte initialSpeed, byte maxSpeed, int maxPathLength);
+        MazeSolver(short initialSpeed, byte maxSpeed, int maxPathLength);
         float calculateError();
         float getCurrentError();
         void off();
@@ -27,37 +27,29 @@ class MazeSolver : public LineFollower {
         void solver();
 };
 
-MazeSolver::MazeSolver(byte inicialSpeed, byte maxSpeed, int maxPathLength) : LineFollower(inicialSpeed, maxSpeed) {
+MazeSolver::MazeSolver(short inicialSpeed, byte maxSpeed, int maxPathLength) : LineFollower(inicialSpeed, maxSpeed) {
     path = new Stack(maxPathLength);
     off();
 }
 
 float MazeSolver::calculateError() {
-    // In Line = 1
-    bool 
-        leftOuterSensorValue = !digitalRead(leftOuterSensorPin),
-        leftInnerSensorValue = !digitalRead(leftInnerSensorPin),
-        middleSensorValue = !digitalRead(middleSensorPin),
-        rightInnerSensorValue = !digitalRead(rightInnerSensorPin),
-        rightOuterSensorValue = !digitalRead(rightOuterSensorPin);
-
-    switch (leftOuterSensorValue << 4 | leftInnerSensorValue << 3 | middleSensorValue << 2 | rightInnerSensorValue << 1 | rightOuterSensorValue) {
+    switch (readSensors()) {
         case 0b000001:
             return outerSensorsError;
         case 0b00011:
-            return (outerSensorsError + middleSensorsError)/2;
+            return (outerSensorsError + innerSensorsError)/2;
         case 0b00010:
-            return middleSensorsError;
+            return innerSensorsError;
         case 0b00110:
-            return (middleSensorsError + centralSensorError)/2;
+            return (innerSensorsError + centralSensorError)/2;
         case 0b00100:
             return centralSensorError;
         case 0b01100:
-            return -(middleSensorsError + centralSensorError)/2;
+            return -(innerSensorsError + centralSensorError)/2;
         case 0b01000:
-            return -middleSensorsError;
+            return -innerSensorsError;
         case 0b11000:
-            return -(outerSensorsError + middleSensorsError)/2;
+            return -(outerSensorsError + innerSensorsError)/2;
         case 0b10000:
             return -outerSensorsError;
         case 0b00000:
@@ -85,7 +77,7 @@ void MazeSolver::on() {
 }
 
 void MazeSolver::passLine() {
-    setSpeed(initialSpeed);
+    setSpeed(initialSpeed + 30);
     forward();
     
     do getCurrentError();
@@ -99,7 +91,7 @@ void MazeSolver::turnToLeft() {
     do rotateLeft();
     while (getCurrentError() < 100);
     do rotateLeft();
-    while (getCurrentError() != 0);
+    while (getCurrentError() >= 100);
     path->push('L');
 }
 
@@ -108,14 +100,14 @@ void MazeSolver::turnToRight() {
     do rotateRight();
     while (getCurrentError() < 100);
     do rotateRight();
-    while (getCurrentError() != 0);
+    while (getCurrentError() >= 100);
     path->push('R');
 }
 
 void MazeSolver::makeU() {
-    setSpeed(initialSpeed);
+    setSpeed(initialSpeed + 30);
     do rotateRight();
-    while (getCurrentError() != 0);
+    while (getCurrentError() >= 100);
     path->push('U');
 }
 
@@ -132,11 +124,20 @@ void MazeSolver::solver() {
         case SHARP_LEFT_ERROR: // Turn to left (90°)
             if (path->get(-3) == 'T' && path->get(-2) == 'R' && path->get(-1) == 'U')
                 break;
+            stop();
+            delay(300);
             turnToLeft();
+            stop();
+            delay(300);
             break;
         case SHARP_RIGHT_ERROR: // Turn to right (90°)
+            if (path->get(-3) == 'T' && path->get(-2) == 'L' && path->get(-1) == 'U')
                 break;
+            stop();
+            delay(300);
             turnToRight();
+            stop();
+            delay(300);
             break;
         case CHOICE_OF_T_ERROR: // Choice of T
             choosePath();

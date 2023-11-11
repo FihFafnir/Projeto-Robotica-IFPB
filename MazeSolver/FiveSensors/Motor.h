@@ -3,34 +3,26 @@
 typedef unsigned char byte;
 
 class Motor {
-    float speed;
-    byte maxSpeed;
-    byte pins[2];
+    byte maxSpeed, pins[2];
+    short speed;
     public:
+        static const byte 
+            NORMAL = 1,
+            REVERSE = 2;
         Motor(byte firstPin, byte secondPin, byte maxSpeed);
-        float getSpeed();
-        void setSpeed(float value);
-        void rotateClockwise();
-        void rotateCounterclockwise();
-        void stop();
-    private:
         void rotate(byte firstPin, byte secondPin);
+        void rotate(byte direction);
+        void stop();
+        void setSpeed(short newSpeed);
+        short getSpeed();
 };
 
 Motor::Motor(byte firstPin, byte secondPin, byte maxSpeed) {
-    pins[0] = firstPin;
-    pins[1] = secondPin;
-    maxSpeed = maxSpeed;
+    this->pins[0] = firstPin;
+    this->pins[1] = secondPin;
+    this->maxSpeed = maxSpeed;
     pinMode(firstPin, OUTPUT);
     pinMode(secondPin, OUTPUT);
-}
-
-float Motor::getSpeed() {
-    return speed;
-}
-
-void Motor::setSpeed(float value) {
-    speed = max(min(value, maxSpeed), -maxSpeed);
 }
 
 void Motor::rotate(byte firstPin, byte secondPin) {
@@ -38,17 +30,21 @@ void Motor::rotate(byte firstPin, byte secondPin) {
     digitalWrite(secondPin, LOW);
 }
 
-void Motor::rotateClockwise() {
-    rotate(pins[1], pins[0]);
-}
-
-void Motor::rotateCounterclockwise() {
-    rotate(pins[0], pins[1]);
+void Motor::rotate(byte direction) {
+    rotate(pins[direction >> 1], pins[direction & 1]);
 }
 
 void Motor::stop() {
     digitalWrite(pins[0], LOW);
     digitalWrite(pins[1], LOW);
+}
+
+void Motor::setSpeed(short newSpeed) {
+    speed = min(max(-maxSpeed, newSpeed), maxSpeed);
+}
+
+short Motor::getSpeed() {
+    return speed;
 }
 
 #endif
