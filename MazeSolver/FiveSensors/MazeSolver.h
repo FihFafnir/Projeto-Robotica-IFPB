@@ -7,6 +7,7 @@
 #define SHARP_LEFT_ERROR 101
 #define SHARP_RIGHT_ERROR 102
 #define CHOICE_OF_T_ERROR 103
+#define TURN_SPEED 100
 
 typedef unsigned char byte;
 
@@ -55,8 +56,10 @@ float MazeSolver::calculateError() {
         case 0b00000:
             return MAKE_U_ERROR;
         case 0b00111:
+        case 0b01111:
             return SHARP_RIGHT_ERROR;
         case 0b11100:
+        case 0b11110:
             return SHARP_LEFT_ERROR;
         case 0b11111:
             return CHOICE_OF_T_ERROR;
@@ -77,37 +80,29 @@ void MazeSolver::on() {
 }
 
 void MazeSolver::passLine() {
-    setSpeed(initialSpeed + 30);
-    forward();
-    
-    do getCurrentError();
-    while (currentError >= 100 && currentError <= 103);
-
+    setSpeed(TURN_SPEED);
+    while (getCurrentError() > 100) 
+        forward();
     delay(100);
 }
 
 void MazeSolver::turnToLeft() {
     passLine();
-    do rotateLeft();
-    while (getCurrentError() < 100);
-    do rotateLeft();
-    while (getCurrentError() >= 100);
+    while (getCurrentError() < 100) rotateLeft();
+    while (getCurrentError() >= 100) rotateLeft();
     path->push('L');
 }
 
 void MazeSolver::turnToRight() {
     passLine();
-    do rotateRight();
-    while (getCurrentError() < 100);
-    do rotateRight();
-    while (getCurrentError() >= 100);
+    while (getCurrentError() < 100) rotateRight();
+    while (getCurrentError() >= 100) rotateRight();
     path->push('R');
 }
 
 void MazeSolver::makeU() {
-    setSpeed(initialSpeed + 30);
-    do rotateRight();
-    while (getCurrentError() >= 100);
+    setSpeed(TURN_SPEED);
+    while (getCurrentError() >= 100) rotateRight();
     path->push('U');
 }
 
@@ -119,7 +114,9 @@ void MazeSolver::choosePath() {
 void MazeSolver::solver() {
     switch(round(getCurrentError())) {
         case MAKE_U_ERROR: // Make U (180°)
-            makeU();
+            delay(100);
+            if (getCurrentError() == MAKE_U_ERROR)
+                makeU();
             break;
         case SHARP_LEFT_ERROR: // Turn to left (90°)
             if (path->get(-3) == 'T' && path->get(-2) == 'R' && path->get(-1) == 'U')

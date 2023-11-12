@@ -18,7 +18,6 @@ class LineFollower : public Vehicle {
         LineFollower(short initialSpeed, byte maxSpeed);
         float calculateError();
         float calculatePID();
-        float getCurrentError();
         void followLine();
         void stop();
         void setErrorWeights(float newInnerSensorsError, float newOuterSensorsError, float centralSensorError);
@@ -61,11 +60,6 @@ float LineFollower::calculatePID() {
     i += currentError;
     previousError = currentError;
     return kp*p + ki*i + kd*d;
-}
-
-float LineFollower::getCurrentError() {
-    currentError = calculateError();
-    return currentError;
 }
 
 void LineFollower::followLine() {
