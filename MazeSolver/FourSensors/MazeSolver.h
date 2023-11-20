@@ -1,180 +1,132 @@
 #ifndef MAZESOLVER_H_INCLUDED
 #define MAZESOLVER_H_INCLUDED
-#include "Vehicle.h"
+#include "LineFollower.h"
 #include "Stack.h"
-typedef unsigned char byte;
 
-class MazeSolver : public Vehicle {
-    float 
-        kp, ki, kd, 
-        p, i, d, 
-        pid, currentError, previousError, 
-        middleSensorsError, outerSensorsError;
-    byte initialSpeed, leftmostSensorPin, leftSensorPin, rightSensorPin, rightmostSensorPin;
+#define MAKE_U_ERROR 100
+#define SHARP_LEFT_ERROR 101
+#define SHARP_RIGHT_ERROR 102
+#define CHOICE_OF_T_ERROR 103
+#define TURN_SPEED 200
+
+class MazeSolver : public LineFollower {
     Stack* path;
-
     public:
-        MazeSolver(byte initialSpeed, byte maxSpeed, int maxPathLength);
+        bool isOn;
+        MazeSolver(short initialSpeed, byte maxSpeed, byte numberOfSensors, int maxPathLength);
         float calculateError();
-        float calculatePID();
-        float getCurrentError();
-        void followLine();
         void passLine();
         void turnToLeft();
         void turnToRight();
         void makeU();
         void choosePath();
-        void stop();
-        void setConstants(float kp, float ki, float kd);
-        void setErrorWeights(float newMiddleSensorsError, float newOuterSensorsError);
-        void setSensorsPins(byte newLeftmostSensorPin, byte newLeftSensorPin, byte newRightSensorPin, byte newRightmostSensorPin);
+        void solver();
 };
 
-MazeSolver::MazeSolver(byte initialSpeed, byte maxSpeed, int maxPathLength) : Vehicle(initialSpeed, maxSpeed), initialSpeed(initialSpeed) {
+MazeSolver::MazeSolver(short inicialSpeed, byte maxSpeed, byte numberOfSensors, int maxPathLength) : LineFollower(inicialSpeed, maxSpeed, numberOfSensors) {
     path = new Stack(maxPathLength);
-    p = i = d = pid = currentError = previousError = 0;
 }
 
 float MazeSolver::calculateError() {
-    // In Line = 1
-    bool 
-        leftMostSensorValue = !digitalRead(leftmostSensorPin),
-        leftSensorValue = !digitalRead(leftSensorPin),
-        rightSensorValue = !digitalRead(rightSensorPin),
-        rightMostSensorValue = !digitalRead(rightmostSensorPin);
-
-    if (leftMostSensorValue && leftSensorValue && rightSensorValue && !rightMostSensorValue)
-        return 100;
-    if (!leftMostSensorValue && leftSensorValue && rightSensorValue && rightMostSensorValue)
-        return 101;
-    if (!leftMostSensorValue && !leftSensorValue && !rightSensorValue && !rightMostSensorValue)
-        return 102;
-    if (leftMostSensorValue && leftSensorValue && rightSensorValue && rightMostSensorValue)
-        return 103;
-    if (leftMostSensorValue && !leftSensorValue && !rightSensorValue && rightMostSensorValue)
-        return 104;
-
-    if (!leftMostSensorValue && !leftSensorValue && !rightSensorValue && rightMostSensorValue)
-        return outerSensorsError;
-    if (!leftMostSensorValue && !leftSensorValue && rightSensorValue && rightMostSensorValue)
-        return (outerSensorsError + middleSensorsError)/2;
-    if (!leftMostSensorValue && !leftSensorValue && rightSensorValue && !rightMostSensorValue)
-        return middleSensorsError;
-    if (!leftMostSensorValue && leftSensorValue && rightSensorValue && !rightMostSensorValue)
-        return 0;
-    if (!leftMostSensorValue && leftSensorValue && !rightSensorValue && !rightMostSensorValue)
-        return -middleSensorsError;
-    if (leftMostSensorValue && leftSensorValue && !rightSensorValue && !rightMostSensorValue)
-        return -(outerSensorsError + middleSensorsError)/2;
-    if (leftMostSensorValue && !leftSensorValue && !rightSensorValue && !rightMostSensorValue)
-        return -outerSensorsError;
-}
-
-float MazeSolver::calculatePID() {
-    currentError = calculateError();
-    p = currentError, 
-    d = currentError - previousError;
-    i += currentError;
-    previousError = currentError;
-    return kp*p + ki*i + kd*d;
-}
-
-float MazeSolver::getCurrentError() {
-    currentError = calculateError();
-    return currentError;
-}
-
-void MazeSolver::followLine() {
-    pid = calculatePID();
-    setSpeed(initialSpeed + pid, initialSpeed - pid);
-    forward();
+    switch (readSensors()) {
+        case 0b0001:
+            return outerSensorsError;
+        case 0b0011:
+            return (outerSensorsError + innerSensorsError)/2;
+        case 0b0010:
+            return innerSensorsError;
+        case 0b0110:
+            return centralSensorError;
+        case 0b0100:
+            return -innerSensorsError;
+        case 0b1100:
+            return -(outerSensorsError + innerSensorsError)/2;
+        case 0b1000:
+            return -outerSensorsError;
+        case 0b0000:
+            return MAKE_U_ERROR;
+        case 0b0111:
+            return SHARP_RIGHT_ERROR;
+        case 0b1110:
+            return SHARP_LEFT_ERROR;
+        case 0b1111:
+            return CHOICE_OF_T_ERROR;
+    }
 }
 
 void MazeSolver::passLine() {
-    setSpeed(initialSpeed);
+    setSpeed(TURN_SPEED);
     forward();
-    
-    do currentError = calculateError();
-    while (currentError >= 100 && currentError <= 103);
-
-    // delay(20*initialSpeed/3);
-    delay(330);
+    delay(250);
+    stop();
+    delay(300);
+    setSpeed(TURN_SPEED);
 }
 
 void MazeSolver::turnToLeft() {
     passLine();
-    // if (path->size() < 2 || path->get(-1) != 'B'|| path->get(-2) != 'R') {
-        // if (currentError == 102 || (path->get(-1) == 'B' && path->get(-2) == 'S')) {
-            do {
-                rotateLeft();
-                currentError = calculateError();
-            } while (currentError < 100);
-            do {
-                rotateLeft();
-                currentError = calculateError();
-            } while (currentError != 0);
-            path->push('L');
-        // } else path->push('S');
-    // }
+    rotateLeft();
+    do readSensors();
+    while (sensorsInBlack[1] || sensorsInBlack[2]);
+    do readSensors();
+    while (!sensorsInBlack[1] && !sensorsInBlack[2]);
+    path->push('L');
 }
 
 void MazeSolver::turnToRight() {
     passLine();
-    if (path->size() < 2 || path->get(-1) != 'B' || path->get(-2) != 'L') {
-        if (currentError == 102 || (path->get(-1) == 'B' && path->get(-2) == 'S')) {
-            do {
-                rotateRight();
-                currentError = calculateError();
-            } while (currentError < 100);
-            do {
-                rotateRight();
-                currentError = calculateError();
-            } while (currentError != 0);
-            path->push('R');
-        } else path->push('S');
-    }
+    rotateRight();
+    do readSensors();
+    while (sensorsInBlack[1] || sensorsInBlack[2]);
+    do readSensors();
+    while (!sensorsInBlack[1] && !sensorsInBlack[2]);
+    path->push('R');
+}
+
+void MazeSolver::makeU() {
+    passLine();
+    rotateRight();
+    do readSensors();
+    while (!sensorsInBlack[1] && !sensorsInBlack[2]);
+    stop();
+    delay(10000);
+    setSpeed(getInicialSpeed());
+    path->push('U');
 }
 
 void MazeSolver::choosePath() {
     path->push('T');
-    turnToRight();
+    stop();
 }
 
-void MazeSolver::makeU() {
-    path->push('U');
-    setSpeed(initialSpeed);
-    do {
-        rotateRight();
-        currentError = calculateError();
-    } while (currentError != 0);
+void MazeSolver::solver() {
+    switch(round(calculateError())) {
+        case MAKE_U_ERROR: // Make U (180°)
+            makeU();
+            break;
+        case SHARP_LEFT_ERROR: // Turn to left (90°)
+            // if (path->get(-3) == 'T' && path->get(-2) == 'R' && path->get(-1) == 'U')
+            //     break;
+            // stop();
+            // delay(300);
+            // turnToLeft();
+            // stop();
+            // delay(300);
+            break;
+        case SHARP_RIGHT_ERROR: // Turn to right (90°)
+            // if (path->get(-3) == 'T' && path->get(-2) == 'L' && path->get(-1) == 'U')
+            //     break;
+            // stop();
+            // delay(300);
+            // turnToRight();
+            // stop();
+            // delay(300);
+            break;
+        case CHOICE_OF_T_ERROR: // Choice of T
+            // choosePath();
+            break;
+        default:
+            followLine();
+    }
 }
-
-void MazeSolver::stop() {
-    Vehicle::stop();
-    setSpeed(initialSpeed);
-    p = i = d = pid = currentError = previousError = 0;
-}
-
-void MazeSolver::setConstants(float newKp, float newKi, float newKd) {
-    kp = newKp;
-    ki = newKi;
-    kd = newKd;
-}
-
-void MazeSolver::setErrorWeights(float newMiddleSensorsError, float newOuterSensorsError) {
-    middleSensorsError = newMiddleSensorsError;
-    outerSensorsError = newOuterSensorsError;
-}
-
-void MazeSolver::setSensorsPins(byte newLeftmostSensorPin, byte newLeftSensorPin, byte newRightSensorPin, byte newRightmostSensorPin) {
-    leftmostSensorPin = newLeftmostSensorPin;
-    leftSensorPin = newLeftSensorPin;
-    rightSensorPin = newRightSensorPin;
-    rightmostSensorPin = newRightmostSensorPin;
-    pinMode(leftmostSensorPin, INPUT);
-    pinMode(leftSensorPin, INPUT);
-    pinMode(rightSensorPin, INPUT);
-    pinMode(rightmostSensorPin, INPUT);
-}
-
 #endif

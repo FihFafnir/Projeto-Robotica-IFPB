@@ -1,52 +1,65 @@
 #ifndef MOTOR_H_INCLUDED
 #define MOTOR_H_INCLUDED
-typedef unsigned char byte;
 
 class Motor {
-    byte speed, maxSpeed;
-    byte pins[2];
+    byte maxSpeed, pins[4];
+    short speed;
+    bool enInput;
     public:
-        Motor(byte firstPin, byte secondPin, byte speed, byte maxSpeed);
-        byte getSpeed();
-        void setSpeed(byte value);
-        void rotateClockwise();
-        void rotateCounterclockwise();
-        void stop();
-    private:
+        static const byte 
+            NORMAL = 1,
+            REVERSE = 2;
+        Motor(byte firstPin, byte secondPin, byte maxSpeed);
+        Motor(byte firstPin, byte secondPin, byte enPin, byte maxSpeed);
         void rotate(byte firstPin, byte secondPin);
+        void rotate(byte direction);
+        void stop();
+        void setSpeed(short newSpeed);
+        short getSpeed();
 };
 
-Motor::Motor(byte firstPin, byte secondPin, byte spd, byte maxSpd) {
-    pins[0] = firstPin;
-    pins[1] = secondPin;
-    speed = spd;
-    maxSpeed = maxSpd;
+Motor::Motor(byte firstPin, byte secondPin, byte maxSpeed) {
+    this->pins[0] = firstPin;
+    this->pins[1] = secondPin;
+    this->maxSpeed = maxSpeed;
+    this->enInput = false;
+    pinMode(firstPin, OUTPUT);
+    pinMode(secondPin, OUTPUT);
 }
 
-byte Motor::getSpeed() {
-    return speed;
-}
-
-void Motor::setSpeed(byte value) {
-    speed = max(min(value, maxSpeed), 0);
+Motor::Motor(byte firstPin, byte secondPin, byte enPin, byte maxSpeed) {
+    this->pins[0] = firstPin;
+    this->pins[1] = secondPin;
+    this->pins[2] = enPin;
+    this->maxSpeed = maxSpeed;
+    this->enInput = true;
+    pinMode(firstPin, OUTPUT);
+    pinMode(secondPin, OUTPUT);
 }
 
 void Motor::rotate(byte firstPin, byte secondPin) {
-    analogWrite(firstPin, speed);
     digitalWrite(secondPin, LOW);
+    if (enInput) {
+        analogWrite(pins[2], abs(speed));
+        digitalWrite(firstPin, HIGH);
+    } else analogWrite(firstPin, abs(speed));
 }
 
-void Motor::rotateClockwise() {
-    rotate(pins[1], pins[0]);
-}
-
-void Motor::rotateCounterclockwise() {
-    rotate(pins[0], pins[1]);
+void Motor::rotate(byte direction) {
+    rotate(pins[direction >> 1], pins[direction & 1]);
 }
 
 void Motor::stop() {
     digitalWrite(pins[0], LOW);
     digitalWrite(pins[1], LOW);
+}
+
+void Motor::setSpeed(short newSpeed) {
+    speed = constrain(newSpeed, -maxSpeed, maxSpeed);
+}
+
+short Motor::getSpeed() {
+    return speed;
 }
 
 #endif

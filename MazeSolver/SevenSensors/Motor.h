@@ -1,6 +1,5 @@
 #ifndef MOTOR_H_INCLUDED
 #define MOTOR_H_INCLUDED
-typedef unsigned char byte;
 
 class Motor {
     byte maxSpeed, pins[2];
@@ -40,7 +39,7 @@ void Motor::stop() {
 }
 
 void Motor::setSpeed(short newSpeed) {
-    speed = min(max(-maxSpeed, newSpeed), maxSpeed);
+    speed = constrain(newSpeed, -maxSpeed, maxSpeed);
 }
 
 short Motor::getSpeed() {

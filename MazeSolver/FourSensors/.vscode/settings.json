@@ -19,5 +19,7 @@
         "activityBar.background": "#00000000",
         "minimap.background": "#00000000",
         "scrollbar.shadow": "#00000000"
-    }
+    },
+    "superBG.opacity": 12,
+    "C_Cpp.errorSquiggles": "disabled"
 }

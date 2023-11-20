@@ -1,95 +1,111 @@
 #ifndef VEHICLE_H_INCLUDED
 #define VEHICLE_H_INCLUDED
 #include "Motor.h"
-typedef unsigned char byte;
 
 class Vehicle {
     Motor *leftMotor, *rightMotor;
-    byte speed, maxSpeed;
-    public:
-        Vehicle(byte spd, byte maxSpd);
-        void setMotorsPins(byte firstLeftSensorPin, byte secondLeftSensorPin, byte firstRightSensorPin, byte secondRightSensorPin);
-        void setSpeed(byte value);
-        void setSpeed(byte leftMotorValue, byte rightMotorSpeed);
-        void updateSpeed(byte value);
-        void updateSpeed(byte leftMotorValue, byte rightMotorSpeed);
+    short speed;
+    byte maxSpeed;
+    public: 
+        Vehicle(short initialSpeed, byte maxSpeed);
+        void setMotorsPins(byte firstLeftMotorPin, byte secondLeftMotorPin, byte firstRightMotorPin, byte secondRightMotorPin);
+        void setMotorsPins(byte leftEnPin, byte firstLeftMotorPin, byte secondLeftMotorPin, byte firstRightMotorPin, byte secondRightMotorPin, byte rightEnPin);
+        void setSpeed(short newSpeed);
+        void setSpeed(short newLeftMotorSpeed, short newRightMotorSpeed);
+        void updateSpeed(short speedDelta);
+        void updateSpeed(short leftMotorSpeedDelta, short rightMotorSpeedDelta);
+        void run();
         void forward();
         void backward();
         void rotateLeft();
         void rotateRight();
         void stop();
-        byte getSpeed();
-        byte getLeftMotorSpeed();
-        byte getRightMotorSpeed();
+        short getSpeed();
+        short getLeftMotorSpeed();
+        short getRightMotorSpeed();
 };
 
-Vehicle::Vehicle(byte spd, byte maxSpd) {
-    speed = spd;
-    maxSpeed = maxSpd;
+Vehicle::Vehicle(short initialSpeed, byte maxSpeed) {
+    this->speed = initialSpeed;
+    this->maxSpeed = maxSpeed;
 }
 
-void Vehicle::setMotorsPins(byte firstLeftSensorPin, byte secondLeftSensorPin, byte firstRightSensorPin, byte secondRightSensorPin) {
-    leftMotor = new Motor(firstLeftSensorPin, secondLeftSensorPin, speed, maxSpeed);
-    rightMotor = new Motor(firstRightSensorPin, secondRightSensorPin, speed, maxSpeed);
-    pinMode(firstLeftSensorPin, OUTPUT);
-    pinMode(secondLeftSensorPin, OUTPUT);
-    pinMode(firstRightSensorPin, OUTPUT);
-    pinMode(secondRightSensorPin, OUTPUT);
+void Vehicle::setMotorsPins(byte firstLeftMotorPin, byte secondLeftMotorPin, byte firstRightMotorPin, byte secondRightMotorPin) {
+    leftMotor = new Motor(firstLeftMotorPin, secondLeftMotorPin, maxSpeed);
+    rightMotor = new Motor(firstRightMotorPin, secondRightMotorPin, maxSpeed);
+    setSpeed(speed);
 }
 
-void Vehicle::setSpeed(byte value) {
-    speed = value;
-    setSpeed(value, value);
+void Vehicle::setMotorsPins(byte leftEnPin, byte firstLeftMotorPin, byte secondLeftMotorPin, byte firstRightMotorPin, byte secondRightMotorPin, byte rightEnPin) {
+    leftMotor = new Motor(firstLeftMotorPin, secondLeftMotorPin, leftEnPin, maxSpeed);
+    rightMotor = new Motor(firstRightMotorPin, secondRightMotorPin, rightEnPin, maxSpeed);
+    setSpeed(speed);
 }
 
-void Vehicle::setSpeed(byte leftMotorValue, byte rightMotorValue) {
-    leftMotor->setSpeed(leftMotorValue);
-    rightMotor->setSpeed(rightMotorValue);
-}
-
-void Vehicle::updateSpeed(byte value) {
-    updateSpeed(value, value);
-}
-
-void Vehicle::updateSpeed(byte leftMotorValue, byte rightMotorValue) {
-    setSpeed(getLeftMotorSpeed() + leftMotorValue, getRightMotorSpeed() + rightMotorValue);
-}
-
-byte Vehicle::getSpeed() {
-    return (getLeftMotorSpeed() + getRightMotorSpeed())/2;
-}
-
-byte Vehicle::getLeftMotorSpeed() {
-    return leftMotor->getSpeed();
-}
-
-byte Vehicle::getRightMotorSpeed() {
-    return rightMotor->getSpeed();
+void Vehicle::run() {
+    if (getLeftMotorSpeed() > 0 && getRightMotorSpeed() > 0)
+        forward();
+    else if (getLeftMotorSpeed() < 0 && getRightMotorSpeed() < 0)
+        backward();
+    else if (getLeftMotorSpeed() < 0 && getRightMotorSpeed() > 0)
+        rotateLeft();
+    else if (getLeftMotorSpeed() > 0 && getRightMotorSpeed() < 0)
+        rotateRight();
 }
 
 void Vehicle::forward() {
-    leftMotor->rotateClockwise();
-    rightMotor->rotateCounterclockwise();
+    leftMotor->rotate(Motor::REVERSE);
+    rightMotor->rotate(Motor::NORMAL);
 }
 
 void Vehicle::backward() {
-    leftMotor->rotateCounterclockwise();
-    rightMotor->rotateClockwise();
+    leftMotor->rotate(Motor::NORMAL);
+    rightMotor->rotate(Motor::REVERSE);
 }
 
 void Vehicle::rotateLeft() {
-    leftMotor->rotateCounterclockwise();
-    rightMotor->rotateCounterclockwise();
+    leftMotor->rotate(Motor::NORMAL);
+    rightMotor->rotate(Motor::NORMAL);
 }
 
 void Vehicle::rotateRight() {
-    leftMotor->rotateClockwise();
-    rightMotor->rotateClockwise();
+    leftMotor->rotate(Motor::REVERSE);
+    rightMotor->rotate(Motor::REVERSE);
 }
 
 void Vehicle::stop() {
     leftMotor->stop();
     rightMotor->stop();
+}
+
+void Vehicle::setSpeed(short newSpeed) {
+    leftMotor->setSpeed(newSpeed);
+    rightMotor->setSpeed(newSpeed);
+}
+
+void Vehicle::setSpeed(short newLeftMotorSpeed, short newRightMotorSpeed) {
+    leftMotor->setSpeed(newLeftMotorSpeed);
+    rightMotor->setSpeed(newRightMotorSpeed);
+}
+
+void Vehicle::updateSpeed(short speedDelta) {
+    setSpeed(getSpeed() + speedDelta);
+}
+
+void Vehicle::updateSpeed(short leftMotorSpeedDelta, short rightMotorSpeedDelta) {
+    setSpeed(getLeftMotorSpeed() + leftMotorSpeedDelta, getRightMotorSpeed() + rightMotorSpeedDelta);
+}
+
+short Vehicle::getSpeed() {
+    return (getLeftMotorSpeed() + getRightMotorSpeed())/2;
+}
+
+short Vehicle::getLeftMotorSpeed() {
+    return leftMotor->getSpeed();
+}
+
+short Vehicle::getRightMotorSpeed() {
+    return rightMotor->getSpeed();
 }
 
 #endif

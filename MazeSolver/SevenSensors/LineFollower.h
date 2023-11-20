@@ -3,6 +3,8 @@
 #include "Vehicle.h"
 
 #define CALIBRATION_TIME 10
+#define MAKE_U_ERROR 100
+
 class LineFollower : public Vehicle {
     float 
         kp, ki, kd, 
@@ -42,20 +44,26 @@ LineFollower::LineFollower(short initialSpeed, byte maxSpeed, byte numberOfSenso
 
 float LineFollower::calculateError() {
     switch (readSensors()) {
-        case 0b0001:
+        case 0b00001:
             return outerSensorsError;
-        case 0b0011:
+        case 0b00011:
             return (outerSensorsError + innerSensorsError)/2;
-        case 0b0010:
+        case 0b00010:
             return innerSensorsError;
-        case 0b0110:
+        case 0b00110:
+            return (innerSensorsError + centralSensorError)/2;
+        case 0b00100:
             return centralSensorError;
-        case 0b0100:
+        case 0b01100:
+            return -(innerSensorsError + centralSensorError)/2;
+        case 0b01000:
             return -innerSensorsError;
-        case 0b1100:
+        case 0b11000:
             return -(outerSensorsError + innerSensorsError)/2;
-        case 0b1000:
+        case 0b10000:
             return -outerSensorsError;
+        case 0b00000:
+            return MAKE_U_ERROR;
     }
 }
 
@@ -76,8 +84,9 @@ void LineFollower::followLine() {
 
 void LineFollower::stop() {
     Vehicle::stop();
-    setSpeed(initialSpeed);
     p = i = d = pid = currentError = previousError = 0;
+    setSpeed(initialSpeed);
+    calculateError();
 }
 
 
@@ -136,7 +145,7 @@ byte LineFollower::readSensors() {
     byte result = 0, i;
     for (i = 0; i < numberOfSensors; i++) {
         sensorsValues[i] = digitalRead(sensorsPins[i]);
-        sensorsInBlack[i] = sensorsValues[i];
+        sensorsInBlack[i] = !sensorsValues[i];
         // sensorsInBlack[i] = !sensorsValues[i];
         //     sensorsValues[i] == sensorsMaxValues[i] ? false :
         //     sensorsValues[i] == sensorsMinValues[i] ? true : 

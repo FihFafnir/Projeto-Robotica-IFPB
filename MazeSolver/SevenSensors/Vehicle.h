@@ -2,8 +2,6 @@
 #define VEHICLE_H_INCLUDED
 #include "Motor.h"
 
-typedef unsigned char byte;
-
 class Vehicle {
     Motor *leftMotor, *rightMotor;
     short speed;
