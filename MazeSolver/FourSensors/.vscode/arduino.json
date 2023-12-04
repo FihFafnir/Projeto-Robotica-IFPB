@@ -1,7 +1,6 @@
 {
-    "board": "arduino:avr:nano",
+    "board": "arduino:avr:uno",
     "port": "/dev/ttyUSB0",
     "programmer": "avrisp",
-    "sketch": "FourSensors.ino",
-    "configuration": "cpu=atmega328old"
+    "sketch": "FourSensors.ino"
 }

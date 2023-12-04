@@ -3,6 +3,7 @@
 #include "Vehicle.h"
 
 #define CALIBRATION_TIME 10
+#define MAKE_U_ERROR 100
 class LineFollower : public Vehicle {
     float 
         kp, ki, kd, 
@@ -42,20 +43,14 @@ LineFollower::LineFollower(short initialSpeed, byte maxSpeed, byte numberOfSenso
 
 float LineFollower::calculateError() {
     switch (readSensors()) {
-        case 0b0001:
-            return outerSensorsError;
-        case 0b0011:
-            return (outerSensorsError + innerSensorsError)/2;
-        case 0b0010:
+        case 0b01:
             return innerSensorsError;
-        case 0b0110:
+        case 0b11:
             return centralSensorError;
-        case 0b0100:
+        case 0b10:
             return -innerSensorsError;
-        case 0b1100:
-            return -(outerSensorsError + innerSensorsError)/2;
-        case 0b1000:
-            return -outerSensorsError;
+        case 0b00:
+            return MAKE_U_ERROR;
     }
 }
 

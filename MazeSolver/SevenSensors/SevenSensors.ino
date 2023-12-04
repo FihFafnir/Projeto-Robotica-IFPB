@@ -23,7 +23,7 @@
 
 // Constants Configuration
 // PID
-#define KP 80 * ((INITIAL_SPEED+50)/100)
+#define KP 80
 #define KI 0
 #define KD 160
 

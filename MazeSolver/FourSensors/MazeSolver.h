@@ -7,10 +7,15 @@
 #define SHARP_LEFT_ERROR 101
 #define SHARP_RIGHT_ERROR 102
 #define CHOICE_OF_T_ERROR 103
-#define TURN_SPEED 200
+#define STOP_ERROR 104
+#define TURN_SPEED 80
+#define VERIFICATION_DELAY 200
 
 class MazeSolver : public LineFollower {
     Stack* path;
+    byte 
+        sharpLeftTurnSensorPin,
+        sharpRightTurnSensorPin;
     public:
         bool isOn;
         MazeSolver(short initialSpeed, byte maxSpeed, byte numberOfSensors, int maxPathLength);
@@ -21,6 +26,7 @@ class MazeSolver : public LineFollower {
         void makeU();
         void choosePath();
         void solver();
+        void setSharpTurnSensors(byte leftSensorPin, byte rightSensorPin);
 };
 
 MazeSolver::MazeSolver(short inicialSpeed, byte maxSpeed, byte numberOfSensors, int maxPathLength) : LineFollower(inicialSpeed, maxSpeed, numberOfSensors) {
@@ -28,48 +34,38 @@ MazeSolver::MazeSolver(short inicialSpeed, byte maxSpeed, byte numberOfSensors, 
 }
 
 float MazeSolver::calculateError() {
-    switch (readSensors()) {
-        case 0b0001:
-            return outerSensorsError;
-        case 0b0011:
-            return (outerSensorsError + innerSensorsError)/2;
-        case 0b0010:
-            return innerSensorsError;
-        case 0b0110:
-            return centralSensorError;
-        case 0b0100:
-            return -innerSensorsError;
-        case 0b1100:
-            return -(outerSensorsError + innerSensorsError)/2;
-        case 0b1000:
-            return -outerSensorsError;
-        case 0b0000:
-            return MAKE_U_ERROR;
-        case 0b0111:
-            return SHARP_RIGHT_ERROR;
-        case 0b1110:
-            return SHARP_LEFT_ERROR;
-        case 0b1111:
-            return CHOICE_OF_T_ERROR;
-    }
+    readSensors();
+    bool 
+        sharpLeftTurnSensorValue = digitalRead(sharpLeftTurnSensorPin),
+        sharpRightTurnSensorValue = digitalRead(sharpRightTurnSensorPin),
+        centralSensorValue = sensorsInBlack[0] | sensorsInBlack[1];
+
+    if (sharpLeftTurnSensorValue && centralSensorValue && sharpRightTurnSensorValue) 
+        return CHOICE_OF_T_ERROR;
+    if (sharpLeftTurnSensorValue && !centralSensorValue && sharpRightTurnSensorValue)
+        return STOP_ERROR;
+    if (sharpLeftTurnSensorValue)
+        return SHARP_LEFT_ERROR;
+    if (sharpRightTurnSensorValue)
+        return SHARP_RIGHT_ERROR;
+    return LineFollower::calculateError();
 }
 
 void MazeSolver::passLine() {
     setSpeed(TURN_SPEED);
     forward();
-    delay(250);
-    stop();
-    delay(300);
-    setSpeed(TURN_SPEED);
+    delay(100);
 }
 
 void MazeSolver::turnToLeft() {
     passLine();
     rotateLeft();
     do readSensors();
-    while (sensorsInBlack[1] || sensorsInBlack[2]);
+    while (sensorsInBlack[0] | sensorsInBlack[1]);
     do readSensors();
-    while (!sensorsInBlack[1] && !sensorsInBlack[2]);
+    while (!(sensorsInBlack[0] | sensorsInBlack[1]));
+    stop();
+    delay(1000);
     path->push('L');
 }
 
@@ -77,56 +73,68 @@ void MazeSolver::turnToRight() {
     passLine();
     rotateRight();
     do readSensors();
-    while (sensorsInBlack[1] || sensorsInBlack[2]);
+    while (sensorsInBlack[0] | sensorsInBlack[1]);
     do readSensors();
-    while (!sensorsInBlack[1] && !sensorsInBlack[2]);
+    while (!(sensorsInBlack[0] | sensorsInBlack[1]));
+    stop();
+    delay(1000);
     path->push('R');
 }
 
 void MazeSolver::makeU() {
-    passLine();
+    setSpeed(TURN_SPEED);
     rotateRight();
     do readSensors();
-    while (!sensorsInBlack[1] && !sensorsInBlack[2]);
+    while (!(sensorsInBlack[0] | sensorsInBlack[1]));
     stop();
-    delay(10000);
-    setSpeed(getInicialSpeed());
+    delay(1000);
     path->push('U');
 }
 
 void MazeSolver::choosePath() {
     path->push('T');
-    stop();
+    turnToLeft();
 }
 
 void MazeSolver::solver() {
     switch(round(calculateError())) {
         case MAKE_U_ERROR: // Make U (180°)
-            makeU();
+            delay(VERIFICATION_DELAY);
+            if (calculateError() == STOP_ERROR)
+                stop();
+            else makeU();
             break;
         case SHARP_LEFT_ERROR: // Turn to left (90°)
             // if (path->get(-3) == 'T' && path->get(-2) == 'R' && path->get(-1) == 'U')
             //     break;
-            // stop();
-            // delay(300);
-            // turnToLeft();
-            // stop();
-            // delay(300);
+            delay(VERIFICATION_DELAY);
+            if (calculateError() == STOP_ERROR)
+                stop();
+            else turnToLeft();
             break;
         case SHARP_RIGHT_ERROR: // Turn to right (90°)
             // if (path->get(-3) == 'T' && path->get(-2) == 'L' && path->get(-1) == 'U')
             //     break;
-            // stop();
-            // delay(300);
-            // turnToRight();
-            // stop();
-            // delay(300);
+            delay(VERIFICATION_DELAY);
+            if (calculateError() == STOP_ERROR)
+                stop();
+            else turnToRight();
             break;
-        case CHOICE_OF_T_ERROR: // Choice of T
-            // choosePath();
+        case STOP_ERROR:
+            delay(VERIFICATION_DELAY);
+            if (calculateError() == STOP_ERROR)
+                stop();
+            else choosePath();
             break;
         default:
             followLine();
     }
+}
+
+void MazeSolver::setSharpTurnSensors(byte leftSensorPin, byte rightSensorPin) {
+    pinMode(leftSensorPin, INPUT);
+    pinMode(rightSensorPin, INPUT);
+    sharpLeftTurnSensorPin = leftSensorPin;
+    sharpRightTurnSensorPin = rightSensorPin;
 }
 #endif
