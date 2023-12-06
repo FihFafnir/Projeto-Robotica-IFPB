@@ -7,7 +7,7 @@
 #define SHARP_RIGHT_ERROR 102
 #define CHOICE_OF_T_ERROR 103
 #define STOP_ERROR 104
-#define TURN_SPEED 150
+#define TURN_SPEED 120
 #define VERIFICATION_DELAY 100
 
 class MazeSolver : public LineFollower {

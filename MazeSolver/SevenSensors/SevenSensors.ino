@@ -2,7 +2,7 @@
 
 // Speed Configuration
 #define MAX_SPEED 255
-#define INITIAL_SPEED 100
+#define INITIAL_SPEED 85
 
 // Sensor Configuration
 #define LEFT_OUTER_SENSOR_PIN 13
