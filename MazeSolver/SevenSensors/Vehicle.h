@@ -1,84 +1,81 @@
-#ifndef VEHICLE_H_INCLUDED
-#define VEHICLE_H_INCLUDED
+#pragma once
 #include "Motor.h"
 
 class Vehicle {
-    Motor *leftMotor, *rightMotor;
-    short speed;
-    byte maxSpeed;
+    Motor m_left, m_right;
+    short m_speed;
+    byte m_maxSpeed;
+
     public: 
-        Vehicle(short initialSpeed, byte maxSpeed);
+        Vehicle();
+        Vehicle(byte maxSpeed);
         void setMotorsPins(byte firstLeftMotorPin, byte secondLeftMotorPin, byte firstRightMotorPin, byte secondRightMotorPin);
-        void setSpeed(short newSpeed);
-        void setSpeed(short newLeftMotorSpeed, short newRightMotorSpeed);
+        
+        void setSpeed(short speed);
+        void setSpeed(short leftMotorSpeed, short rightMotorSpeed);
         void updateSpeed(short speedDelta);
         void updateSpeed(short leftMotorSpeedDelta, short rightMotorSpeedDelta);
+        
         void run();
         void forward();
         void backward();
         void rotateLeft();
         void rotateRight();
         void stop();
+        
         short getSpeed();
         short getLeftMotorSpeed();
         short getRightMotorSpeed();
 };
 
-Vehicle::Vehicle(short initialSpeed, byte maxSpeed) {
-    this->speed = initialSpeed;
-    this->maxSpeed = maxSpeed;
-}
+Vehicle::Vehicle() : m_maxSpeed(MAX_SPEED_DEFAULT) {}
+
+Vehicle::Vehicle(byte maxSpeed) : m_maxSpeed(maxSpeed) {}
 
 void Vehicle::setMotorsPins(byte firstLeftMotorPin, byte secondLeftMotorPin, byte firstRightMotorPin, byte secondRightMotorPin) {
-    leftMotor = new Motor(firstLeftMotorPin, secondLeftMotorPin, maxSpeed);
-    rightMotor = new Motor(firstRightMotorPin, secondRightMotorPin, maxSpeed);
-    setSpeed(speed);
+    m_left.setPins(firstLeftMotorPin, secondLeftMotorPin);
+    m_right.setPins(firstRightMotorPin, secondRightMotorPin);
+    setSpeed(m_speed);
 }
 
 void Vehicle::run() {
-    if (getLeftMotorSpeed() > 0 && getRightMotorSpeed() > 0)
-        forward();
-    else if (getLeftMotorSpeed() < 0 && getRightMotorSpeed() < 0)
-        backward();
-    else if (getLeftMotorSpeed() < 0 && getRightMotorSpeed() > 0)
-        rotateLeft();
-    else if (getLeftMotorSpeed() > 0 && getRightMotorSpeed() < 0)
-        rotateRight();
+    m_left.rotate();
+    m_right.rotate();
 }
 
 void Vehicle::forward() {
-    leftMotor->rotate(Motor::REVERSE);
-    rightMotor->rotate(Motor::NORMAL);
+    m_left.rotate(Motor::REVERSE);
+    m_right.rotate(Motor::NORMAL);
 }
 
 void Vehicle::backward() {
-    leftMotor->rotate(Motor::NORMAL);
-    rightMotor->rotate(Motor::REVERSE);
+    m_left.rotate(Motor::NORMAL);
+    m_right.rotate(Motor::REVERSE);
 }
 
 void Vehicle::rotateLeft() {
-    leftMotor->rotate(Motor::NORMAL);
-    rightMotor->rotate(Motor::NORMAL);
+    m_left.rotate(Motor::NORMAL);
+    m_right.rotate(Motor::NORMAL);
 }
 
 void Vehicle::rotateRight() {
-    leftMotor->rotate(Motor::REVERSE);
-    rightMotor->rotate(Motor::REVERSE);
+    m_left.rotate(Motor::REVERSE);
+    m_right.rotate(Motor::REVERSE);
 }
 
 void Vehicle::stop() {
-    leftMotor->stop();
-    rightMotor->stop();
+    m_left.stop();
+    m_right.stop();
 }
 
-void Vehicle::setSpeed(short newSpeed) {
-    leftMotor->setSpeed(newSpeed);
-    rightMotor->setSpeed(newSpeed);
+void Vehicle::setSpeed(short speed) {
+    m_left.setSpeed(-speed);
+    m_right.setSpeed(speed);
 }
 
-void Vehicle::setSpeed(short newLeftMotorSpeed, short newRightMotorSpeed) {
-    leftMotor->setSpeed(newLeftMotorSpeed);
-    rightMotor->setSpeed(newRightMotorSpeed);
+void Vehicle::setSpeed(short leftMotorSpeed, short rightMotorSpeed) {
+    m_left.setSpeed(-leftMotorSpeed);
+    m_right.setSpeed(rightMotorSpeed);
 }
 
 void Vehicle::updateSpeed(short speedDelta) {
@@ -94,11 +91,9 @@ short Vehicle::getSpeed() {
 }
 
 short Vehicle::getLeftMotorSpeed() {
-    return leftMotor->getSpeed();
+    return m_left.getSpeed();
 }
 
 short Vehicle::getRightMotorSpeed() {
-    return rightMotor->getSpeed();
+    return m_right.getSpeed();
 }
-
-#endif

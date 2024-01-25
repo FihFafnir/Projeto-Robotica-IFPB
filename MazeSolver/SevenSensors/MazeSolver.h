@@ -1,23 +1,21 @@
-#ifndef MAZESOLVER_H_INCLUDED
-#define MAZESOLVER_H_INCLUDED
+#pragma once
 #include "LineFollower.h"
-#include "Stack.h"
 
 #define SHARP_LEFT_ERROR 101
 #define SHARP_RIGHT_ERROR 102
-#define CHOICE_OF_T_ERROR 103
-#define STOP_ERROR 104
-#define TURN_SPEED 150
+#define STOP_ERROR 103
+#define TURN_SPEED 100
 #define VERIFICATION_DELAY 100
 
-class MazeSolver : public LineFollower {
-    Stack* path;
+template <size_t S>
+class MazeSolver : public LineFollower<S> {
     byte 
-        sharpLeftTurnSensorPin,
-        sharpRightTurnSensorPin;
+        m_sharpLeftTurnSensorPin,
+        m_sharpRightTurnSensorPin;
     public:
-        bool isOn;
-        MazeSolver(short initialSpeed, byte maxSpeed, byte numberOfSensors, int maxPathLength);
+        MazeSolver(short initialSpeed);
+        MazeSolver(short initialSpeed, byte maxSpeed);
+
         float calculateError();
         void passLine();
         void turnToLeft();
@@ -25,77 +23,82 @@ class MazeSolver : public LineFollower {
         void makeU();
         void choosePath();
         void solver();
-        void setSharpTurnSensors(byte leftSensorPin, byte rightSensorPin);
+        void setSharpTurnSensors(byte left, byte right);
 };
 
-MazeSolver::MazeSolver(short inicialSpeed, byte maxSpeed, byte numberOfSensors, int maxPathLength) : LineFollower(inicialSpeed, maxSpeed, numberOfSensors) {
-    path = new Stack(maxPathLength);
-}
+template <size_t S>
+MazeSolver<S>::MazeSolver(short inicialSpeed) : LineFollower<S>(inicialSpeed) {}
 
-float MazeSolver::calculateError() {
-    readSensors();
+template <size_t S>
+MazeSolver<S>::MazeSolver(short inicialSpeed, byte maxSpeed) : LineFollower<S>(inicialSpeed, maxSpeed) {}
+
+template <size_t S>
+float MazeSolver<S>::calculateError() {
     bool 
-        sharpLeftTurnSensorValue = !digitalRead(sharpLeftTurnSensorPin),
-        sharpRightTurnSensorValue = !digitalRead(sharpRightTurnSensorPin),
-        centralSensorValue = sensorsInBlack[2];
+        sharpLeftTurnSensorValue = !digitalRead(m_sharpLeftTurnSensorPin),
+        sharpRightTurnSensorValue = !digitalRead(m_sharpRightTurnSensorPin),
+        centralSensorValue = (readSensors() >> (S >> 1)) & 1;
 
     if (sharpLeftTurnSensorValue && centralSensorValue && sharpRightTurnSensorValue) 
-        return CHOICE_OF_T_ERROR;
-    if (sharpLeftTurnSensorValue && !centralSensorValue && sharpRightTurnSensorValue)
         return STOP_ERROR;
     if (sharpLeftTurnSensorValue)
         return SHARP_LEFT_ERROR;
     if (sharpRightTurnSensorValue)
         return SHARP_RIGHT_ERROR;
-    return LineFollower::calculateError();
+    return LineFollower<S>::calculateError();
 }
 
-void MazeSolver::passLine() {
+template <size_t S>
+void MazeSolver<S>::passLine() {
     setSpeed(TURN_SPEED);
     forward();
     delay(100);
 }
 
-void MazeSolver::turnToLeft() {
+template <size_t S>
+void MazeSolver<S>::turnToLeft() {
+    bool centralSensorValue;
     passLine();
     rotateLeft();
-    do readSensors();
-    while (sensorsInBlack[2]);
-    do readSensors();
-    while (!sensorsInBlack[2]);
+    do centralSensorValue = (readSensors() >> (S >> 1)) & 1;
+    while (centralSensorValue);
+    do centralSensorValue = (readSensors() >> (S >> 1)) & 1;
+    while (!centralSensorValue);
     stop();
     delay(1000);
-    path->push('L');
 }
 
-void MazeSolver::turnToRight() {
+template <size_t S>
+void MazeSolver<S>::turnToRight() {
+    bool centralSensorValue;
     passLine();
     rotateRight();
-    do readSensors();
-    while (sensorsInBlack[2]);
-    do readSensors();
-    while (!sensorsInBlack[2]);
+    do centralSensorValue = (readSensors() >> (S >> 1)) & 1;
+    while (centralSensorValue);
+    do centralSensorValue = (readSensors() >> (S >> 1)) & 1;
+    while (!centralSensorValue);
     stop();
     delay(1000);
-    path->push('R');
 }
 
-void MazeSolver::makeU() {
+template <size_t S>
+void MazeSolver<S>::makeU() {
+    bool centralSensorValue;
     setSpeed(TURN_SPEED);
     rotateRight();
-    do readSensors();
-    while (!sensorsInBlack[2]);
+    do centralSensorValue = (readSensors() >> (S >> 1)) & 1;
+    while (!centralSensorValue);
     stop();
     delay(1000);
-    path->push('U');
 }
 
-void MazeSolver::choosePath() {
-    path->push('T');
+template <size_t S>
+void MazeSolver<S>::choosePath() {
     turnToLeft();
 }
 
-void MazeSolver::solver() {
+template <size_t S>
+void MazeSolver<S>::solver() {
     switch(round(calculateError())) {
         case MAKE_U_ERROR: // Make U (180°)
             delay(VERIFICATION_DELAY);
@@ -104,39 +107,32 @@ void MazeSolver::solver() {
             else makeU();
             break;
         case SHARP_LEFT_ERROR: // Turn to left (90°)
-            // if (path->get(-3) == 'T' && path->get(-2) == 'R' && path->get(-1) == 'U')
-            //     break;
             delay(VERIFICATION_DELAY);
             if (calculateError() == STOP_ERROR)
                 stop();
             else turnToLeft();
             break;
         case SHARP_RIGHT_ERROR: // Turn to right (90°)
-            // if (path->get(-3) == 'T' && path->get(-2) == 'L' && path->get(-1) == 'U')
-            //     break;
             delay(VERIFICATION_DELAY);
             if (calculateError() == STOP_ERROR)
                 stop();
             else turnToRight();
             break;
-        case CHOICE_OF_T_ERROR: // Choice of T
+        case STOP_ERROR: // Stop or Choice of T
             delay(VERIFICATION_DELAY);
             if (calculateError() == STOP_ERROR)
                 stop();
             else choosePath();
-            break;
-        case STOP_ERROR:
-            stop();
             break;
         default:
             followLine();
     }
 }
 
-void MazeSolver::setSharpTurnSensors(byte leftSensorPin, byte rightSensorPin) {
-    pinMode(leftSensorPin, INPUT);
-    pinMode(rightSensorPin, INPUT);
-    sharpLeftTurnSensorPin = leftSensorPin;
-    sharpRightTurnSensorPin = rightSensorPin;
+template <size_t S>
+void MazeSolver<S>::setSharpTurnSensors(byte left, byte right) {
+    pinMode(left, INPUT);
+    pinMode(right, INPUT);
+    m_sharpLeftTurnSensorPin = left;
+    m_sharpRightTurnSensorPin = right;
 }
-#endif

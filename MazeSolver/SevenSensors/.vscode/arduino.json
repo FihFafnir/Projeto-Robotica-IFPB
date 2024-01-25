@@ -2,5 +2,5 @@
     "board": "arduino:avr:uno",
     "port": "/dev/ttyUSB0",
     "programmer": "avrisp",
-    "sketch": "FiveSensors.ino"
+    "sketch": "SevenSensors.ino"
 }

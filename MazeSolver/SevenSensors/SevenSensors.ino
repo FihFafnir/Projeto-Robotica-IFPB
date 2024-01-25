@@ -2,7 +2,7 @@
 
 // Speed Configuration
 #define MAX_SPEED 255
-#define INITIAL_SPEED 100
+#define INITIAL_SPEED 80
 
 // Sensor Configuration
 #define LEFT_OUTER_SENSOR_PIN 13
@@ -23,7 +23,7 @@
 
 // Constants Configuration
 // PID
-#define KP 80 * ((INITIAL_SPEED+50)/100)
+#define KP 80
 #define KI 0
 #define KD 160
 
@@ -35,20 +35,26 @@
 #define NUMBER_OF_SENSORS 5
 #define MAX_PATH_LENGTH 100
 
-MazeSolver *ms = new MazeSolver(INITIAL_SPEED, MAX_SPEED, NUMBER_OF_SENSORS, MAX_PATH_LENGTH);
-byte sensorsPins[] = {LEFT_OUTER_SENSOR_PIN, LEFT_INNER_SENSOR_PIN, CENTRAL_SENSOR_PIN, RIGHT_INNER_SENSOR_PIN, RIGHT_OUTER_SENSOR_PIN};
+MazeSolver<NUMBER_OF_SENSORS> ms(INITIAL_SPEED, MAX_SPEED);
+byte sensorsPins[] = {
+    LEFT_OUTER_SENSOR_PIN, 
+    LEFT_INNER_SENSOR_PIN, 
+    CENTRAL_SENSOR_PIN, 
+    RIGHT_INNER_SENSOR_PIN, 
+    RIGHT_OUTER_SENSOR_PIN
+};
 
 void setup() {
     Serial.begin(115200);
     Serial.println("Iniciando Configuração");
-    ms->setConstants(KP, KI, KD);
-    ms->setErrorWeights(INNER_SENSORS_ERROR, OUTER_SENSORS_ERROR, CENTRAL_SENSOR_ERROR);
-    ms->setMotorsPins(LEFT_MOTOR_PIN_1, LEFT_MOTOR_PIN_2, RIGHT_MOTOR_PIN_1, RIGHT_MOTOR_PIN_2);
-    ms->setSensorsPins(sensorsPins);
-    ms->setSharpTurnSensors(SHARP_LEFT_TURN_SENSOR_PIN, SHARP_RIGHT_TURN_SENSOR_PIN);
-    // ms->calibrateSensors();
+    ms.setConstants(KP, KI, KD);
+    ms.setErrorWeights(INNER_SENSORS_ERROR, OUTER_SENSORS_ERROR, CENTRAL_SENSOR_ERROR);
+    ms.setMotorsPins(LEFT_MOTOR_PIN_1, LEFT_MOTOR_PIN_2, RIGHT_MOTOR_PIN_1, RIGHT_MOTOR_PIN_2);
+    ms.setSensorsPins(sensorsPins);
+    ms.setSharpTurnSensors(SHARP_LEFT_TURN_SENSOR_PIN, SHARP_RIGHT_TURN_SENSOR_PIN);
+    // ms.calibrateSensors();
 }
 
 void loop() {
-    ms->solver();
+    ms.solver();
 }

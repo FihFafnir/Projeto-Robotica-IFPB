@@ -1,130 +1,132 @@
-#ifndef LINEFOLLOWER_H_INCLUDED
-#define LINEFOLLOWER_H_INCLUDED
+#pragma once
 #include "Vehicle.h"
 
 #define CALIBRATION_TIME 10
 #define MAKE_U_ERROR 100
 
+// S = Number of Sensors
+template <size_t S>
 class LineFollower : public Vehicle {
     float 
-        kp, ki, kd, 
-        p, i, d, 
-        pid, previousError;
-    short initialSpeed;
+        m_kp, m_ki, m_kd, 
+        m_p, m_i, m_d, 
+        m_pid, m_previousError;
+    short m_initialSpeed;
 
     public:
+        float errors[1<<S];
         float currentError, innerSensorsError, outerSensorsError, centralSensorError;
-        byte leftOuterSensorPin, leftInnerSensorPin, centralSensorPin, rightInnerSensorPin, rightOuterSensorPin, *sensorsPins, numberOfSensors;
-        int *sensorsMaxValues, *sensorsMinValues, *sensorsValues;
-        bool *sensorsInBlack;
+        int sensorsMaxValues[S], sensorsMinValues[S], sensorsValues[S];
+        byte sensorsPins[S];
+        bool sensorsInBlack[S];
 
-        LineFollower(short initialSpeed, byte maxSpeed, byte numberOfSensors);
+        LineFollower(short initialSpeed);
+        LineFollower(short initialSpeed, byte maxSpeed);
+
+        void setErrorWeights(float innerSensorsError, float outerSensorsError, float centralSensorError);
+        void setConstants(float kp, float ki, float kd);
+        void setSensorsPins(byte (&pins)[S]);
+        void setInicialSpeed(short inicialSpeed);
+        
         float calculateError();
         float calculatePID();
         void followLine();
         void stop();
-        void setErrorWeights(float newInnerSensorsError, float newOuterSensorsError, float centralSensorError);
-        void setConstants(float kp, float ki, float kd);
-        void setSensorsPins(byte sensorsPins[]);
-        void setInicialSpeed(short newInicialSpeed);
         void updateInicialSpeed(short inicialSpeedDelta);
         void calibrateSensors();
         short getInicialSpeed();
         byte readSensors();
 };
 
-LineFollower::LineFollower(short initialSpeed, byte maxSpeed, byte numberOfSensors) : Vehicle(initialSpeed, maxSpeed), initialSpeed(initialSpeed), numberOfSensors(numberOfSensors) {
-    p = i = d = pid = currentError = previousError = 0;
-    sensorsPins = new byte[numberOfSensors];
-    sensorsMinValues = new int[numberOfSensors];
-    sensorsMaxValues = new int[numberOfSensors];
-    sensorsValues = new int[numberOfSensors];
-    memset(sensorsPins, 0, sizeof(sensorsPins));
+template <size_t S>
+LineFollower<S>::LineFollower(short initialSpeed) : Vehicle(), m_initialSpeed(initialSpeed) {
+    m_p = m_i = m_d = m_pid = currentError = m_previousError = 0;
 }
 
-float LineFollower::calculateError() {
-    switch (readSensors()) {
-        case 0b00001:
-            return outerSensorsError;
-        case 0b00011:
-            return (outerSensorsError + innerSensorsError)/2;
-        case 0b00010:
-            return innerSensorsError;
-        case 0b00110:
-            return (innerSensorsError + centralSensorError)/2;
-        case 0b00100:
-            return centralSensorError;
-        case 0b01100:
-            return -(innerSensorsError + centralSensorError)/2;
-        case 0b01000:
-            return -innerSensorsError;
-        case 0b11000:
-            return -(outerSensorsError + innerSensorsError)/2;
-        case 0b10000:
-            return -outerSensorsError;
-        case 0b00000:
-            return MAKE_U_ERROR;
+template <size_t S>
+LineFollower<S>::LineFollower(short initialSpeed, byte maxSpeed) : Vehicle(maxSpeed), m_initialSpeed(initialSpeed) {
+    m_p = m_i = m_d = m_pid = currentError = m_previousError = 0;
+}
+
+template <size_t S>
+void LineFollower<S>::setErrorWeights(float innerSensorsError, float outerSensorsError, float centralSensorError) {
+    errors[0b00000] = MAKE_U_ERROR;
+    errors[0b00001] = outerSensorsError;
+    errors[0b00011] = (outerSensorsError + innerSensorsError) / 2;
+    errors[0b00010] = innerSensorsError;
+    errors[0b00110] = (innerSensorsError + centralSensorError) / 2;
+    errors[0b00100] = centralSensorError;
+    errors[0b01100] = -errors[0b00110];
+    errors[0b01000] = -errors[0b00010];
+    errors[0b11000] = -errors[0b00011];
+    errors[0b10000] = -errors[0b00001];
+}
+
+
+template <size_t S>
+void LineFollower<S>::setConstants(float kp, float ki, float kd) {
+    m_kp = kp;
+    m_ki = ki;
+    m_kd = kd;
+}
+
+template <size_t S>
+void LineFollower<S>::setSensorsPins(byte (&pins)[S]) {
+    for (byte i = 0; i < S; i++) {
+        sensorsPins[i] = pins[i];
+        pinMode(pins[i], INPUT);
     }
 }
 
-float LineFollower::calculatePID() {
-    currentError = calculateError();
-    p = currentError, 
-    d = currentError - previousError;
-    i += currentError;
-    previousError = currentError;
-    return kp*p + ki*i + kd*d;
+template <size_t S>
+void LineFollower<S>::setInicialSpeed(short inicialSpeed) {
+    m_initialSpeed = inicialSpeed;
 }
 
-void LineFollower::followLine() {
-    pid = calculatePID();
-    setSpeed(round(initialSpeed + pid), round(initialSpeed - pid));
+
+template <size_t S>
+float LineFollower<S>::calculateError() {
+    return errors[readSensors()];
+}
+
+template <size_t S>
+float LineFollower<S>::calculatePID() {
+    currentError = calculateError();
+    m_p = currentError, 
+    m_d = currentError - m_previousError;
+    m_i += currentError;
+    m_previousError = currentError;
+    return m_kp*m_p + m_ki*m_i + m_kd*m_d;
+}
+
+template <size_t S>
+void LineFollower<S>::followLine() {
+    m_pid = calculatePID();
+    setSpeed(round(m_initialSpeed + m_pid), round(m_initialSpeed - m_pid));
     run();
 }
 
-void LineFollower::stop() {
+template <size_t S>
+void LineFollower<S>::stop() {
     Vehicle::stop();
-    p = i = d = pid = currentError = previousError = 0;
-    setSpeed(initialSpeed);
-    calculateError();
+    setSpeed(m_initialSpeed);
+    calculatePID();
 }
 
-
-void LineFollower::setErrorWeights(float newInnerSensorsError, float newOuterSensorsError, float newCentralSensorError) {
-    innerSensorsError = newInnerSensorsError;
-    outerSensorsError = newOuterSensorsError;
-    centralSensorError = newCentralSensorError;
+template <size_t S>
+void LineFollower<S>::updateInicialSpeed(short inicialSpeedDelta) {
+    setInicialSpeed(m_initialSpeed + inicialSpeedDelta);
 }
 
-void LineFollower::setConstants(float newKp, float newKi, float newKd) {
-    kp = newKp;
-    ki = newKi;
-    kd = newKd;
-}
-
-void LineFollower::setSensorsPins(byte sensorsPins[]) {
-    for (byte i = 0; i < numberOfSensors; i++) {
-        this->sensorsPins[i] = sensorsPins[i];
-        pinMode(sensorsPins[i], INPUT);
-    }
-}
-
-void LineFollower::setInicialSpeed(short newInicialSpeed) {
-    initialSpeed = newInicialSpeed;
-}
-
-void LineFollower::updateInicialSpeed(short inicialSpeedDelta) {
-    setInicialSpeed(getInicialSpeed() + inicialSpeedDelta);
-}
-
-void LineFollower::calibrateSensors() {
+template <size_t S>
+void LineFollower<S>::calibrateSensors() {
     unsigned long startTime = millis();
-    for (byte i = 0; i < numberOfSensors; i++)
+    for (byte i = 0; i < S; i++)
         sensorsValues[i] = sensorsMinValues[i] = sensorsMaxValues[i] = analogRead(sensorsPins[i]);
     setSpeed(100);
     rotateRight();
     while (millis() - startTime < CALIBRATION_TIME * 1000) {
-        for (byte i = 0; i < numberOfSensors; i++) {
+        for (byte i = 0; i < S; i++) {
             sensorsValues[i] = analogRead(sensorsPins[i]);
             if (sensorsValues[i] < sensorsMinValues[i])
                 sensorsMinValues[i] = sensorsValues[i];
@@ -135,24 +137,24 @@ void LineFollower::calibrateSensors() {
     stop();
 }
 
-short LineFollower::getInicialSpeed() {
-    return initialSpeed;
+template <size_t S>
+short LineFollower<S>::getInicialSpeed() {
+    return m_initialSpeed;
 }
 
-byte LineFollower::readSensors() {
+template <size_t S>
+byte LineFollower<S>::readSensors() {
     // Black: True
     // White: False
     byte result = 0, i;
-    for (i = 0; i < numberOfSensors; i++) {
+    for (i = 0; i < S; i++) {
         sensorsValues[i] = digitalRead(sensorsPins[i]);
         sensorsInBlack[i] = !sensorsValues[i];
         // sensorsInBlack[i] = !sensorsValues[i];
         //     sensorsValues[i] == sensorsMaxValues[i] ? false :
         //     sensorsValues[i] == sensorsMinValues[i] ? true : 
         //     sensorsValues[i] < (sensorsMaxValues[i] + sensorsMinValues[i])/2;
-        result |= sensorsInBlack[i] << numberOfSensors - i - 1;
+        result |= sensorsInBlack[i] << S - i - 1;
     }
     return result;
 }
-
-#endif
