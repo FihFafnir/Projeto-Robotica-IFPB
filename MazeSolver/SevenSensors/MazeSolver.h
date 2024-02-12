@@ -7,6 +7,7 @@
 #define TURN_SPEED 100
 #define VERIFICATION_DELAY 100
 
+// S = Number of Sensors
 template <size_t S>
 class MazeSolver : public LineFollower<S> {
     byte 
